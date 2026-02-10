@@ -1,28 +1,26 @@
 """Booking eligibility resolver -- determines which resorts a contract can book."""
 
-# Original 14 DVC resorts (pre-January 2019) -- resale contracts can book any of these
-ORIGINAL_14_RESORTS = [
-    "old_key_west",
-    "boardwalk",
-    "wilderness_lodge_boulder_ridge",  # Boulder Ridge Villas
-    "wilderness_lodge_copper_creek",   # Copper Creek Villas
-    "beach_club",
-    "hilton_head",
-    "vero_beach",
-    "animal_kingdom_jambo",
-    "animal_kingdom_kidani",
-    "saratoga_springs",
-    "bay_lake_tower",
-    "grand_floridian",
-    "polynesian",
-    "aulani",
-]
+from backend.data.resorts import get_resort_slugs, get_original_resort_slugs, get_restricted_resort_slugs
 
-# Post-January 2019 resorts -- resale contracts can ONLY book home resort
-RESTRICTED_RESORTS = [
-    "riviera",
-    "disneyland_hotel",           # Villas at Disneyland Hotel
-    "cabins_fort_wilderness",     # Cabins at Fort Wilderness
-]
 
-ALL_RESORTS = ORIGINAL_14_RESORTS + RESTRICTED_RESORTS
+def get_eligible_resorts(home_resort: str, purchase_type: str) -> list[str]:
+    """
+    Determine which resorts a contract can book at.
+
+    Rules:
+    - Direct purchase: can book at ALL resorts
+    - Resale at original 14 resort: can book at any of the original 14
+    - Resale at restricted resort (Riviera, DLH, Cabins FW): can ONLY book home resort
+    """
+    if purchase_type == "direct":
+        return get_resort_slugs()  # all resorts
+
+    # Resale contract
+    restricted = get_restricted_resort_slugs()
+
+    if home_resort in restricted:
+        # Post-2019 resort resale: home resort only
+        return [home_resort]
+    else:
+        # Original 14 resort resale: can book any of the original 14
+        return get_original_resort_slugs()
