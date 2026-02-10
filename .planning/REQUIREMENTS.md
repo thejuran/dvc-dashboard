@@ -95,35 +95,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOCK-01 | -- | Pending |
-| DOCK-02 | -- | Pending |
-| DOCK-03 | -- | Pending |
-| DOCK-04 | -- | Pending |
-| DOCK-05 | -- | Pending |
-| DOCK-06 | -- | Pending |
-| CONF-01 | -- | Pending |
-| IMPT-01 | -- | Pending |
-| IMPT-02 | -- | Pending |
-| IMPT-03 | -- | Pending |
-| IMPT-04 | -- | Pending |
-| BKWN-01 | -- | Pending |
-| BKWN-02 | -- | Pending |
-| BKWN-03 | -- | Pending |
-| BKWN-04 | -- | Pending |
-| SCEN-01 | -- | Pending |
-| SCEN-02 | -- | Pending |
-| SCEN-03 | -- | Pending |
-| SCEN-04 | -- | Pending |
-| HEAT-01 | -- | Pending |
-| HEAT-02 | -- | Pending |
-| HEAT-03 | -- | Pending |
-| HEAT-04 | -- | Pending |
+| DOCK-01 | Phase 4 | Pending |
+| DOCK-02 | Phase 4 | Pending |
+| DOCK-03 | Phase 4 | Pending |
+| DOCK-04 | Phase 4 | Pending |
+| DOCK-05 | Phase 4 | Pending |
+| DOCK-06 | Phase 4 | Pending |
+| CONF-01 | Phase 4 | Pending |
+| IMPT-01 | Phase 5 | Pending |
+| IMPT-02 | Phase 5 | Pending |
+| IMPT-03 | Phase 5 | Pending |
+| IMPT-04 | Phase 5 | Pending |
+| BKWN-01 | Phase 5 | Pending |
+| BKWN-02 | Phase 5 | Pending |
+| BKWN-03 | Phase 5 | Pending |
+| BKWN-04 | Phase 5 | Pending |
+| SCEN-01 | Phase 6 | Pending |
+| SCEN-02 | Phase 6 | Pending |
+| SCEN-03 | Phase 6 | Pending |
+| SCEN-04 | Phase 6 | Pending |
+| HEAT-01 | Phase 7 | Pending |
+| HEAT-02 | Phase 7 | Pending |
+| HEAT-03 | Phase 7 | Pending |
+| HEAT-04 | Phase 7 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 after initial definition*
+*Last updated: 2026-02-10 after roadmap creation*
