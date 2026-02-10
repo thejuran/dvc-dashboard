@@ -8,12 +8,22 @@ from sqlalchemy import select, and_
 from backend.db.database import get_db
 from backend.models.contract import Contract
 from backend.models.point_balance import PointBalance
+from backend.models.app_setting import AppSetting
 from backend.api.schemas import PointBalanceCreate, PointBalanceUpdate, PointBalanceResponse
 from backend.engine.use_year import get_current_use_year, build_use_year_timeline
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["points"])
+
+
+async def get_borrowing_limit_pct(db: AsyncSession) -> int:
+    """Get the borrowing limit percentage from app settings."""
+    result = await db.execute(
+        select(AppSetting).where(AppSetting.key == "borrowing_limit_pct")
+    )
+    setting = result.scalar_one_or_none()
+    return int(setting.value) if setting else 100
 
 
 @router.get("/api/contracts/{contract_id}/points")
@@ -104,15 +114,18 @@ async def create_point_balance(
             detail=f"Banked points ({data.points}) cannot exceed annual points ({contract.annual_points})",
         )
 
-    # Warn (but do not reject) if borrowed points exceed annual_points
-    if data.allocation_type == "borrowed" and data.points > contract.annual_points:
-        logger.warning(
-            "Borrowed points (%d) exceed annual points (%d) for contract %d. "
-            "Borrowing limit may be configurable.",
-            data.points,
-            contract.annual_points,
-            contract_id,
-        )
+    # Enforce borrowing policy
+    if data.allocation_type == "borrowed":
+        borrowing_limit_pct = await get_borrowing_limit_pct(db)
+        max_borrowed = int(contract.annual_points * borrowing_limit_pct / 100)
+        if data.points > max_borrowed:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Borrowed points ({data.points}) exceed borrowing limit "
+                    f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
+                ),
+            )
 
     balance = PointBalance(
         contract_id=contract_id,
@@ -135,6 +148,24 @@ async def update_point_balance(
     balance = result.scalar_one_or_none()
     if not balance:
         raise HTTPException(status_code=404, detail="Point balance not found")
+
+    # If updating a borrowed balance, enforce borrowing policy
+    if balance.allocation_type == "borrowed":
+        contract_result = await db.execute(
+            select(Contract).where(Contract.id == balance.contract_id)
+        )
+        contract = contract_result.scalar_one_or_none()
+        if contract:
+            borrowing_limit_pct = await get_borrowing_limit_pct(db)
+            max_borrowed = int(contract.annual_points * borrowing_limit_pct / 100)
+            if data.points > max_borrowed:
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        f"Borrowed points ({data.points}) exceed borrowing limit "
+                        f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
+                    ),
+                )
 
     balance.points = data.points
     await db.commit()

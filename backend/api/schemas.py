@@ -251,3 +251,16 @@ class TripExplorerResponse(BaseModel):
     resorts_checked: list[str]
     resorts_skipped: list[str]
     total_options: int
+
+
+# App Settings schemas
+
+class AppSettingResponse(BaseModel):
+    key: str
+    value: str
+
+    model_config = {"from_attributes": True}
+
+
+class AppSettingUpdate(BaseModel):
+    value: str

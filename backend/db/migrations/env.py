@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 
 # Import models so autogenerate detects them
 from backend.db.database import Base
-from backend.models import Contract, PointBalance, Reservation  # noqa: F401
+from backend.models import Contract, PointBalance, Reservation, AppSetting  # noqa: F401
 
 target_metadata = Base.metadata
 
