@@ -226,3 +226,28 @@ class AvailabilityResponse(BaseModel):
     target_date: str
     contracts: list[AvailabilityContractResult]
     summary: AvailabilitySummary
+
+
+# Trip Explorer schemas
+
+class TripExplorerOption(BaseModel):
+    contract_id: int
+    contract_name: str
+    available_points: int
+    resort: str
+    resort_name: str
+    room_key: str
+    total_points: int
+    num_nights: int
+    points_remaining: int
+    nightly_avg: int
+
+
+class TripExplorerResponse(BaseModel):
+    check_in: str
+    check_out: str
+    num_nights: int
+    options: list[TripExplorerOption]
+    resorts_checked: list[str]
+    resorts_skipped: list[str]
+    total_options: int
