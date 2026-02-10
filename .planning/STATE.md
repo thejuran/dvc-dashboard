@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-09)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 3 in progress -- Dashboard & Trip Explorer
+**Current focus:** Phase 3 complete -- Dashboard & Trip Explorer
 
 ## Current Position
 
 Phase: 3 of 3 (Dashboard & Trip Explorer)
-Plan: 2 of 3 in current phase (03-01 and 03-02 complete)
-Status: Executing Phase 3
-Last activity: 2026-02-10 -- Completed Plan 03-01 (Trip Explorer Backend)
+Plan: 3 of 3 in current phase (all plans complete)
+Status: Phase 3 Complete -- All plans executed
+Last activity: 2026-02-10 -- Completed Plan 03-03 (Trip Explorer UI + Navigation)
 
-Progress: [==========================....] 89% (8/9 plans)
+Progress: [==============================] 100% (9/9 plans)
 
 ## Accumulated Context
 
@@ -41,6 +41,9 @@ Recent decisions affecting current work:
 - NavLink end prop added for "/" to prevent always-active highlighting
 - Trip explorer uses check_in date (not today) for use year calculation -- correct point year for future trips
 - Trip explorer is a pure composition function (no DB access in engine layer)
+- Dashboard stays at "/" (no redirect) -- 03-02 placed it directly, 03-03 preserved this
+- "Point Calculator" renamed to "Availability" in nav to avoid confusion with Trip Explorer
+- Trip Explorer auto-fires search via useQuery enabled flag (no submit button)
 
 ### Pending Todos
 
@@ -55,5 +58,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 03-01-PLAN.md (Trip Explorer Backend). Next: 03-03 (Trip Explorer UI)
+Stopped at: Completed 03-03-PLAN.md (Trip Explorer UI + Navigation). All Phase 3 plans done. Project v1.0 feature-complete.
 Resume file: None
