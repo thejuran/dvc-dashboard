@@ -10,24 +10,24 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 4 of 7 (Docker Packaging + Settings)
-Plan: 1 of 2 complete
-Status: Executing
-Last activity: 2026-02-10 -- Plan 04-01 executed (Docker infrastructure + backend config)
+Plan: 2 of 2 complete
+Status: Checkpoint -- awaiting human verification of 04-02
+Last activity: 2026-02-10 -- Plan 04-02 auto tasks complete (settings + borrowing policy)
 
-Progress: [#####░░░░░] 50%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1 (v1.1)
-- Average duration: 5m 25s
-- Total execution time: 5m 25s
+- Total plans completed: 2 (v1.1)
+- Average duration: 4m 54s
+- Total execution time: 9m 48s
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 4     | 1     | 5m 25s | 5m 25s |
+| 4     | 2     | 9m 48s | 4m 54s |
 
 *Updated after each plan completion*
 
@@ -56,6 +56,10 @@ Phase 4 decisions (from planning):
 - Pydantic BaseSettings for env configuration (not raw os.getenv)
 - Borrowing policy stored in DB app_settings table (not env var) -- UI-toggleable
 - SQLite volume: mount directory /app/data/db (not file) for WAL sidecar support
+- Key-value AppSetting model for extensible settings (not single-purpose table)
+- Settings API validates allowed values server-side (50 or 100 only)
+- Borrowing policy enforced on both create and update of borrowed balances
+- Toggle-style UI cards for policy selection (not dropdown)
 
 ### Pending Todos
 
@@ -70,6 +74,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 04-01-PLAN.md (Docker infrastructure + backend config)
+Stopped at: 04-02-PLAN.md checkpoint:human-verify (Tasks 1-2 complete, awaiting Docker verification)
 Resume file: None
-Next: Execute 04-02-PLAN.md
+Next: Verify 04-02 in Docker, then proceed to Phase 5
