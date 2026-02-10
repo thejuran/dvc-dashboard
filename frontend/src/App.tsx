@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "./components/Layout";
+import DashboardPage from "./pages/DashboardPage";
 import ContractsPage from "./pages/ContractsPage";
 import PointChartsPage from "./pages/PointChartsPage";
 import ReservationsPage from "./pages/ReservationsPage";
@@ -21,7 +22,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/contracts" replace />} />
+            <Route path="/" element={<DashboardPage />} />
             <Route path="/contracts" element={<ContractsPage />} />
             <Route path="/availability" element={<AvailabilityPage />} />
             <Route path="/reservations" element={<ReservationsPage />} />
