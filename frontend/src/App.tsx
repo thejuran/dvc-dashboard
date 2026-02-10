@@ -6,6 +6,7 @@ import ContractsPage from "./pages/ContractsPage";
 import PointChartsPage from "./pages/PointChartsPage";
 import ReservationsPage from "./pages/ReservationsPage";
 import AvailabilityPage from "./pages/AvailabilityPage";
+import TripExplorerPage from "./pages/TripExplorerPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,7 @@ function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/trip-explorer" element={<TripExplorerPage />} />
             <Route path="/contracts" element={<ContractsPage />} />
             <Route path="/availability" element={<AvailabilityPage />} />
             <Route path="/reservations" element={<ReservationsPage />} />

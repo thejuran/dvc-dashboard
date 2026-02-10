@@ -2,8 +2,9 @@ import { NavLink, Outlet } from "react-router-dom";
 
 const navItems = [
   { to: "/", label: "Dashboard" },
+  { to: "/trip-explorer", label: "Trip Explorer" },
   { to: "/contracts", label: "Contracts" },
-  { to: "/availability", label: "Point Calculator" },
+  { to: "/availability", label: "Availability" },
   { to: "/reservations", label: "Reservations" },
   { to: "/point-charts", label: "Point Charts" },
 ];
