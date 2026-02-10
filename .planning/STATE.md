@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-09)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 2 complete, ready to plan Phase 3
+**Current focus:** Phase 3 in progress -- Dashboard & Trip Explorer
 
 ## Current Position
 
-Phase: 2 of 3 (Calculations & Reservations) -- COMPLETE
-Plan: 3 of 3 in current phase (all done)
-Status: Phase 2 Complete
-Last activity: 2026-02-09 -- Completed Plan 02-03 (Reservation & Availability UI)
+Phase: 3 of 3 (Dashboard & Trip Explorer)
+Plan: 2 of 3 in current phase (03-02 complete)
+Status: Executing Phase 3
+Last activity: 2026-02-10 -- Completed Plan 03-02 (Dashboard Page)
 
-Progress: [====================..........] 67% (6/9 plans)
+Progress: [========================......] 78% (7/9 plans)
 
 ## Accumulated Context
 
@@ -37,6 +37,8 @@ Recent decisions affecting current work:
 - 6 seasons used for 2026 charts (Adventure, Choice, Dream, Magic, Premier, Select) -- schema supports any number
 - Room key format: {room_type}_{view_category} parsed via longest-match view_category suffix
 - Point chart JSON schema accommodates 3 to 30+ room/view combos per resort (view_category concern RESOLVED)
+- Dashboard is the new home route (/) replacing redirect to /contracts
+- NavLink end prop added for "/" to prevent always-active highlighting
 
 ### Pending Todos
 
@@ -50,6 +52,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-09
-Stopped at: Phase 2 execution complete. Next: plan Phase 3 (Dashboard & Trip Explorer)
+Last session: 2026-02-10
+Stopped at: Completed 03-02-PLAN.md (Dashboard Page). Next: 03-03 (Trip Explorer)
 Resume file: None
