@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "./components/Layout";
 import ContractsPage from "./pages/ContractsPage";
 import PointChartsPage from "./pages/PointChartsPage";
+import ReservationsPage from "./pages/ReservationsPage";
+import AvailabilityPage from "./pages/AvailabilityPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +23,8 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Navigate to="/contracts" replace />} />
             <Route path="/contracts" element={<ContractsPage />} />
+            <Route path="/availability" element={<AvailabilityPage />} />
+            <Route path="/reservations" element={<ReservationsPage />} />
             <Route path="/point-charts" element={<PointChartsPage />} />
           </Route>
         </Routes>

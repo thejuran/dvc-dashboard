@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PencilIcon, TrashIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,8 +20,6 @@ import {
 import {
   useContractPoints,
   useCreatePointBalance,
-  useUpdatePointBalance,
-  useDeletePointBalance,
 } from "../hooks/usePoints";
 import type { PointAllocationType } from "../types";
 import { ALLOCATION_TYPE_LABELS } from "../types";
@@ -40,15 +38,11 @@ const ALLOCATION_TYPES: PointAllocationType[] = [
 export default function PointBalanceForm({ contractId }: PointBalanceFormProps) {
   const { data: pointsData } = useContractPoints(contractId);
   const createBalance = useCreatePointBalance();
-  const updateBalance = useUpdatePointBalance();
-  const deleteBalance = useDeletePointBalance();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [newType, setNewType] = useState<PointAllocationType>("current");
   const [newPoints, setNewPoints] = useState(0);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editPoints, setEditPoints] = useState(0);
 
   const handleAdd = async () => {
     await createBalance.mutateAsync({
@@ -61,19 +55,6 @@ export default function PointBalanceForm({ contractId }: PointBalanceFormProps) 
     });
     setShowAddForm(false);
     setNewPoints(0);
-  };
-
-  const handleUpdate = async (balanceId: number) => {
-    await updateBalance.mutateAsync({
-      balanceId,
-      points: editPoints,
-      contractId,
-    });
-    setEditingId(null);
-  };
-
-  const handleDelete = async (balanceId: number) => {
-    await deleteBalance.mutateAsync({ balanceId, contractId });
   };
 
   if (!pointsData) return null;

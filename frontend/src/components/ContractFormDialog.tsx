@@ -24,7 +24,6 @@ import {
 } from "../types";
 import type {
   ContractWithDetails,
-  UseYearMonth,
   PurchaseType,
 } from "../types";
 

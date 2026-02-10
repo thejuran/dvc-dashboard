@@ -143,3 +143,57 @@ export interface PointCostRequest {
   check_in: string;
   check_out: string;
 }
+
+// Reservation types
+
+export type ReservationStatus = "confirmed" | "pending" | "cancelled";
+
+export interface Reservation {
+  id: number;
+  contract_id: number;
+  resort: string;
+  room_key: string;
+  check_in: string;
+  check_out: string;
+  points_cost: number;
+  status: ReservationStatus;
+  confirmation_number: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Availability types
+
+export interface AvailabilityContractResult {
+  contract_id: number;
+  contract_name: string;
+  home_resort: string;
+  annual_points: number;
+  use_year: number;
+  use_year_start: string;
+  use_year_end: string;
+  use_year_status: string;
+  banking_deadline: string;
+  banking_deadline_passed: boolean;
+  days_until_banking_deadline: number;
+  days_until_expiration: number;
+  balances: Record<string, number>;
+  total_points: number;
+  committed_points: number;
+  committed_reservation_count: number;
+  available_points: number;
+}
+
+export interface AvailabilitySummary {
+  total_contracts: number;
+  total_points: number;
+  total_committed: number;
+  total_available: number;
+}
+
+export interface AvailabilityResponse {
+  target_date: string;
+  contracts: AvailabilityContractResult[];
+  summary: AvailabilitySummary;
+}
