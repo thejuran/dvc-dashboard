@@ -1,486 +1,800 @@
-# Architecture Research
+# Architecture Research: v1.1 Feature Integration
 
-**Domain:** Personal DVC (Disney Vacation Club) dashboard with web scraping, time-based point calculations, and data visualization
-**Researched:** 2026-02-09
-**Confidence:** MEDIUM -- domain rules well-understood; scraping layer carries uncertainty due to Disney authentication and ToS
+**Domain:** DVC Dashboard -- planning tools and Docker deployment
+**Researched:** 2026-02-10
+**Confidence:** HIGH -- existing architecture is well-understood, new features integrate cleanly with established patterns
 
-## Standard Architecture
+## Current Architecture (Baseline)
 
-### System Overview
-
-```
-                         ┌──────────────────────────────────────────────────┐
-                         │              PRESENTATION LAYER                 │
-                         │  ┌────────────┐ ┌──────────┐ ┌──────────────┐   │
-                         │  │ Dashboard  │ │   Trip   │ │ Reservation  │   │
-                         │  │  (Home)    │ │ Explorer │ │   Tracker    │   │
-                         │  └─────┬──────┘ └────┬─────┘ └──────┬───────┘   │
-                         │        │             │              │           │
-                         ├────────┴─────────────┴──────────────┴───────────┤
-                         │              CALCULATION ENGINE                 │
-                         │  ┌─────────────────┐ ┌────────────────────────┐ │
-                         │  │ Point Availability│ │   Booking Eligibility │ │
-                         │  │   Calculator     │ │   Resolver            │ │
-                         │  └────────┬─────────┘ └───────────┬───────────┘ │
-                         │           │                       │             │
-                         ├───────────┴───────────────────────┴─────────────┤
-                         │                DATA LAYER                       │
-                         │  ┌───────────┐ ┌────────────┐ ┌─────────────┐  │
-                         │  │ Contracts │ │   Point    │ │Reservations │  │
-                         │  │  Store    │ │   Charts   │ │   Store     │  │
-                         │  └───────────┘ └────────────┘ └─────────────┘  │
-                         ├─────────────────────────────────────────────────┤
-                         │              SCRAPING LAYER                     │
-                         │  ┌──────────────────┐  ┌──────────────────────┐ │
-                         │  │  DVC Site Scraper │  │  Sync Scheduler     │ │
-                         │  │  (Playwright)     │  │  (cron/manual)      │ │
-                         │  └──────────────────┘  └──────────────────────┘ │
-                         └─────────────────────────────────────────────────┘
-                                          │
-                                          ▼
-                              ┌────────────────────────┐
-                              │  disneyvacationclub     │
-                              │  .disney.go.com         │
-                              │  (member portal)        │
-                              └────────────────────────┘
-```
-
-### Component Responsibilities
-
-| Component | Responsibility | Communicates With |
-|-----------|----------------|-------------------|
-| **DVC Site Scraper** | Authenticates with Disney member portal, extracts point balances, reservation data, and contract details | Disney member site (external), Data Layer (writes) |
-| **Sync Scheduler** | Triggers scraping on schedule or manual request; manages session persistence | DVC Site Scraper |
-| **Contracts Store** | Persists contract details: home resort, use year, annual points, purchase type (resale/direct), expiration | Calculation Engine (reads) |
-| **Point Charts Store** | Stores points-per-night tables by resort, room type, season, day-of-week | Calculation Engine (reads), Trip Explorer (reads) |
-| **Reservations Store** | Tracks current and past reservations with point costs and dates | Dashboard (reads), Calculation Engine (reads) |
-| **Point Availability Calculator** | Given a target date, computes available points per contract factoring banking windows, borrowed points, use year boundaries, and existing reservations | Contracts Store (reads), Reservations Store (reads) |
-| **Booking Eligibility Resolver** | Given a contract (resale vs direct, home resort), determines which resorts/room types are bookable | Contracts Store (reads), Point Charts (reads) |
-| **Dashboard** | Homepage showing point balances, upcoming reservations, banking deadlines, key dates | Calculation Engine, Data Layer |
-| **Trip Explorer** | "What can I book?" interface -- pick dates, see eligible resorts/rooms with point costs vs available points | Calculation Engine, Booking Eligibility, Point Charts |
-| **Reservation Tracker** | View and manage current reservations, see point impact | Data Layer |
-
-## Recommended Project Structure
+The v1.0 architecture follows a clean three-layer pattern that v1.1 features integrate into:
 
 ```
-dvc-dashboard/
-├── backend/
-│   ├── scraper/              # Web scraping layer
-│   │   ├── auth.py           # Disney member site authentication
-│   │   ├── session.py        # Session persistence (cookies/storage state)
-│   │   ├── points_scraper.py # Extract point balances from member site
-│   │   ├── reservations_scraper.py  # Extract reservation data
-│   │   └── scheduler.py      # Sync scheduling logic
-│   ├── models/               # Data models
-│   │   ├── contract.py       # DVC contract model
-│   │   ├── point_chart.py    # Point chart model (resort/room/season/day)
-│   │   ├── reservation.py    # Reservation model
-│   │   └── point_balance.py  # Point balance snapshot model
-│   ├── engine/               # Calculation engine
-│   │   ├── availability.py   # Point availability calculator
-│   │   ├── eligibility.py    # Booking eligibility resolver (resale restrictions)
-│   │   ├── use_year.py       # Use year date math (banking deadlines, expiry)
-│   │   └── trip_calculator.py # "What can I book" logic
-│   ├── api/                  # API routes
-│   │   ├── dashboard.py      # Dashboard data endpoints
-│   │   ├── trips.py          # Trip explorer endpoints
-│   │   ├── reservations.py   # Reservation endpoints
-│   │   └── sync.py           # Manual sync trigger endpoint
-│   ├── db/                   # Database
-│   │   ├── database.py       # Connection/session management
-│   │   └── migrations/       # Schema migrations
-│   └── main.py               # FastAPI app entry point
-├── frontend/
-│   ├── src/
-│   │   ├── pages/            # Dashboard, TripExplorer, Reservations
-│   │   ├── components/       # Shared UI components
-│   │   ├── hooks/            # Data fetching hooks
-│   │   └── utils/            # Date formatting, point display helpers
-│   └── ...
-├── data/                     # Static data (point charts, resort metadata)
-│   ├── point_charts/         # Point chart CSVs or JSON by resort/year
-│   └── resorts.json          # Resort metadata (names, room types, views)
-└── tests/
-    ├── engine/               # Calculation engine tests (critical)
-    ├── scraper/              # Scraper tests with fixtures
-    └── api/                  # API tests
+┌────────────────────────────────────────────────────────────────────────┐
+│                         FRONTEND (React 19)                            │
+│  Pages ──> Components ──> Hooks (TanStack Query) ──> API Client        │
+│                                                                        │
+│  DashboardPage    AvailabilityPage    TripExplorerPage                  │
+│  ContractsPage    ReservationsPage    PointChartsPage                   │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │ HTTP /api/*
+┌────────────────────────────┴───────────────────────────────────────────┐
+│                         BACKEND (FastAPI)                              │
+│  API Routes ──> Engine (pure functions) ──> Data Layer                  │
+│                                                                        │
+│  api/availability.py    engine/availability.py    models/contract.py    │
+│  api/trip_explorer.py   engine/eligibility.py     models/reservation.py │
+│  api/contracts.py       engine/trip_explorer.py   models/point_balance.py│
+│  api/point_charts.py    engine/use_year.py        db/database.py       │
+│  api/reservations.py                                                    │
+└────────────────────────────┬───────────────────────────────────────────┘
+                             │
+┌────────────────────────────┴───────────────────────────────────────────┐
+│                         DATA LAYER                                     │
+│  SQLite (dvc.db)         data/point_charts/*.json    data/resorts.json  │
+│  - contracts             - polynesian_2026.json                         │
+│  - point_balances        - riviera_2026.json                            │
+│  - reservations          - schema.json                                  │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Structure Rationale
+### Key Architectural Properties
 
-- **backend/scraper/:** Isolated from business logic. Scraping is fragile and will break when Disney changes their site. Keeping it separate means breakage in scraping does not cascade into the calculation or presentation layers.
-- **backend/engine/:** The calculation engine is the core intellectual property of the app. It encodes complex DVC rules (banking windows, borrowing limits, use year math, resale restrictions). It must be independently testable with no dependency on scraping or the database -- pure functions that take data in and return calculations.
-- **backend/models/:** Shared data shapes used across scraper, engine, and API. Single source of truth for what a "contract" or "reservation" looks like.
-- **data/:** Point charts change annually but are publicly available. Storing them as static data files (not scraped) keeps the system simple. Can be manually updated once a year when Disney publishes new charts.
-- **tests/engine/:** The calculation engine deserves the heaviest test coverage. Getting point availability wrong defeats the purpose of the entire app.
+1. **Pure-function engine layer:** Engine functions take plain dicts and dates as arguments, return computed dicts. No DB access, no side effects. API routes handle DB reads, convert ORM objects to dicts, then call engine functions.
 
-## Architectural Patterns
+2. **Frontend is a display layer:** All business logic is server-side. Frontend hooks call API endpoints, components render results. No DVC rule computation in JavaScript.
 
-### Pattern 1: Scrape-Store-Calculate (Decoupled Pipeline)
+3. **Static data for point charts:** Versioned JSON files loaded with `lru_cache`. No database storage for chart data.
 
-**What:** The scraper writes raw data to the database. The calculation engine reads from the database and computes derived values on demand. The scraper never calls the calculation engine; the calculation engine never calls the scraper.
-**When to use:** Always. This is the foundational pattern for the entire system.
-**Trade-offs:** Adds a data staleness window (points shown may be minutes/hours old), but eliminates coupling between the most fragile layer (scraping) and the most critical layer (calculations).
+4. **Zustand is installed but unused.** Package exists in `package.json` but no stores have been created. Available for client-side state management when needed.
+
+## v1.1 Feature Integration Map
+
+### Feature 1: Docker Deployment
+
+**Scope:** Multi-stage Dockerfile, docker-compose.yml, FastAPI static file serving
+
+**New Files:**
+| File | Purpose |
+|------|---------|
+| `Dockerfile` | Multi-stage build: Node.js stage builds frontend, Python stage serves everything |
+| `docker-compose.yml` | Single-service with volume mount for SQLite persistence |
+| `.dockerignore` | Exclude node_modules, __pycache__, .git, etc. |
+
+**Modified Files:**
+| File | Change |
+|------|--------|
+| `backend/main.py` | Add StaticFiles mount for React build output + SPA fallback |
+| `backend/db/database.py` | Ensure DATABASE_URL env var works for Docker volume path |
+
+**Architecture Pattern: Single-Container SPA Serving**
+
+FastAPI serves both the API (`/api/*` routes) and the compiled React frontend (all other paths). This eliminates CORS entirely in production and requires only one container.
 
 ```
-Scraper → [writes] → Database ← [reads] ← Engine ← [calls] ← API ← [calls] ← Frontend
+┌───────────────────────────────────────────────────┐
+│                Docker Container                     │
+│                                                     │
+│  ┌──────────────────────────────────────────────┐  │
+│  │            FastAPI (uvicorn)                   │  │
+│  │                                               │  │
+│  │  /api/*  ──> API Router (existing routes)     │  │
+│  │  /*      ──> StaticFiles(frontend/dist)       │  │
+│  │              with SPA fallback to index.html  │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                     │
+│  /app/data/      ──> volume mount for dvc.db        │
+│  /app/data/point_charts/ ──> bundled in image       │
+└───────────────────────────────────────────────────┘
 ```
 
-The scraper is a "data pump." It runs periodically (or on demand), pushes data into the database, and exits. The rest of the system operates purely on stored data.
+**Dockerfile Multi-Stage Strategy:**
 
-### Pattern 2: Static Data for Point Charts
+```dockerfile
+# Stage 1: Build frontend
+FROM node:22-alpine AS frontend-build
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
 
-**What:** Point charts (points-per-night by resort/room/season/day-of-week) are stored as versioned static files (JSON or CSV), not scraped.
-**When to use:** Always for point charts. They change once per year when Disney publishes new charts and are publicly available on fan sites and the official DVC site.
-**Trade-offs:** Requires a manual annual update (small effort), but eliminates an entire scraping target and its failure modes.
+# Stage 2: Production
+FROM python:3.12-slim
+WORKDIR /app
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/ ./backend/
+COPY data/ ./data/
+COPY alembic.ini ./
+COPY --from=frontend-build /app/frontend/dist ./frontend/dist
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
 
-Point charts have a specific structure:
-- **7 seasons** per year (Adventure, Choice, Dream, Magic, Premier, etc.)
-- **Date ranges** map calendar dates to seasons
-- **Room types** vary by resort (Studio, 1BR, 2BR, Grand Villa, plus view categories)
-- **Day-of-week** pricing: weekday (Sun-Thu) vs weekend (Fri-Sat)
-- **Per-night values** in points
+**SPA Fallback Pattern for FastAPI:**
 
-```json
-{
-  "resort": "Boulder Ridge Villas",
-  "year": 2026,
-  "seasons": [
-    {
-      "name": "Adventure",
-      "date_ranges": [["2026-01-01", "2026-01-31"], ["2026-09-01", "2026-09-30"]],
-      "rooms": {
-        "studio_standard": { "weekday": 10, "weekend": 13 },
-        "one_bedroom": { "weekday": 20, "weekend": 26 },
-        "two_bedroom": { "weekday": 30, "weekend": 38 }
-      }
+```python
+from starlette.staticfiles import StaticFiles
+from starlette.responses import FileResponse
+
+class SPAStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except Exception:
+            # Fall back to index.html for client-side routing
+            return FileResponse(self.directory / "index.html")
+
+# Mount AFTER all /api/* routes
+app.mount("/", SPAStaticFiles(directory="frontend/dist", html=True))
+```
+
+**SQLite Volume Persistence:**
+
+```yaml
+# docker-compose.yml
+services:
+  dvc-dashboard:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - dvc-data:/app/data/db
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/db/dvc.db
+
+volumes:
+  dvc-data:
+```
+
+The database file must live in a named volume so data survives container recreation. The `data/point_charts/` directory is baked into the image since charts are part of the application, not user data.
+
+**Integration with existing code:** The `DATABASE_URL` env var is already read by `backend/db/database.py` with a default fallback. Docker just sets it to a volume-mounted path. No engine changes needed.
+
+---
+
+### Feature 2: Booking Impact Preview
+
+**Scope:** Show "what happens to my points if I book this?" inline in Trip Explorer results
+
+**New Files:**
+| File | Purpose |
+|------|---------|
+| `backend/engine/booking_impact.py` | Pure function: given current state + hypothetical reservation, compute impact |
+| `frontend/src/components/BookingImpactPanel.tsx` | Expandable panel showing point impact breakdown |
+
+**Modified Files:**
+| File | Change |
+|------|--------|
+| `backend/api/trip_explorer.py` | Add optional `?include_impact=true` param to enrich results |
+| `backend/engine/trip_explorer.py` | Call `booking_impact` engine to compute per-option impact |
+| `frontend/src/components/TripExplorerResults.tsx` | Add expand/collapse for BookingImpactPanel per result card |
+| `frontend/src/types/index.ts` | Add `BookingImpact` type to `TripExplorerOption` |
+
+**Engine Function Design:**
+
+```python
+# backend/engine/booking_impact.py
+
+def compute_booking_impact(
+    contract: dict,
+    point_balances: list[dict],
+    reservations: list[dict],
+    hypothetical_reservation: dict,  # {check_in, check_out, points_cost}
+) -> dict:
+    """
+    Compute the impact of a hypothetical booking on a contract's point balance.
+
+    Returns:
+        {
+            "points_before": int,
+            "points_after": int,
+            "points_cost": int,
+            "use_year_charged": int,
+            "remaining_by_type": {"current": int, "banked": int, ...},
+            "banking_risk": bool,      # True if remaining banked points are at risk
+            "borrowing_needed": bool,   # True if hypothetical needs borrowed points
+            "warnings": [str],          # e.g., "Only 15 points remain after booking"
+        }
+    """
+```
+
+This follows the established pattern: pure function, takes dicts, returns a dict. No DB access. The API route fetches data from DB, passes to engine, returns enriched results.
+
+**Data Flow:**
+
+```
+User clicks "Show Impact" on a Trip Explorer result
+    │
+    ▼
+TripExplorerResults ──> (already has the data from trip-explorer response)
+    │                    impact data is computed server-side and included
+    ▼
+BookingImpactPanel renders:
+  - "This booking costs 156 pts from your 2026 Polynesian contract"
+  - "Available: 230 → 74 pts remaining"
+  - Warning: "Only 74 pts remaining -- not enough for another studio stay"
+```
+
+**Integration with existing code:** The `find_affordable_options()` function in `engine/trip_explorer.py` already iterates over contracts and computes availability. The booking impact function receives the same data plus the hypothetical reservation parameters. It reuses `get_contract_availability()` internally. No schema changes needed since this is read-only computation.
+
+---
+
+### Feature 3: What-If Scenario Playground
+
+**Scope:** Standalone page where user builds a list of hypothetical bookings and sees cumulative impact on all contracts
+
+**New Files:**
+| File | Purpose |
+|------|---------|
+| `backend/engine/scenario.py` | Pure function: given state + list of hypothetical reservations, compute cascading impact |
+| `backend/api/scenarios.py` | POST endpoint accepting scenario payload |
+| `backend/api/schemas.py` | New Pydantic schemas for scenario request/response (add to existing file) |
+| `frontend/src/pages/ScenarioPage.tsx` | New page with scenario builder UI |
+| `frontend/src/components/ScenarioBuilder.tsx` | Form to add/remove hypothetical bookings |
+| `frontend/src/components/ScenarioResults.tsx` | Shows cumulative impact across all contracts |
+| `frontend/src/hooks/useScenario.ts` | TanStack Query mutation for scenario computation |
+
+**Modified Files:**
+| File | Change |
+|------|--------|
+| `frontend/src/App.tsx` | Add `/scenarios` route |
+| `frontend/src/components/Layout.tsx` | Add "Scenarios" nav item |
+| `backend/main.py` | Include scenarios router |
+| `frontend/src/types/index.ts` | Add scenario types |
+
+**Key Architectural Decision: Server-Side Computation, Client-Side State**
+
+Scenario state (the list of hypothetical bookings the user is building) lives in the frontend. This is where Zustand earns its place. The user adds/removes hypothetical bookings in the UI, and the accumulated list is sent to the backend for computation.
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Frontend                        │
+│                                                  │
+│  Zustand Store (useScenarioStore)                │
+│  ┌────────────────────────────────────────────┐  │
+│  │ hypotheticals: [                           │  │
+│  │   {resort, room_key, check_in, check_out,  │  │
+│  │    contract_id, points_cost},               │  │
+│  │   ...                                       │  │
+│  │ ]                                           │  │
+│  └──────────────────┬─────────────────────────┘  │
+│                     │ POST /api/scenarios         │
+│                     ▼                             │
+│  TanStack Query mutation ──> ScenarioResults      │
+└─────────────────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────┐
+│                  Backend                         │
+│                                                  │
+│  api/scenarios.py                                │
+│  ┌────────────────────────────────────────────┐  │
+│  │ 1. Load contracts, balances, reservations  │  │
+│  │ 2. Call engine/scenario.py with real data  │  │
+│  │    + hypothetical list                     │  │
+│  │ 3. Return per-contract impact              │  │
+│  └────────────────────────────────────────────┘  │
+│                                                  │
+│  engine/scenario.py                              │
+│  ┌────────────────────────────────────────────┐  │
+│  │ For each hypothetical (in order):          │  │
+│  │   1. Compute availability with prior       │  │
+│  │      hypotheticals treated as committed    │  │
+│  │   2. Record impact delta                    │  │
+│  │ Return cumulative snapshot per contract     │  │
+│  └────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
+
+**Engine Function Design:**
+
+```python
+# backend/engine/scenario.py
+
+def evaluate_scenario(
+    contracts: list[dict],
+    point_balances: list[dict],
+    reservations: list[dict],         # real, existing reservations
+    hypotheticals: list[dict],        # user's what-if bookings
+    borrowing_policy: float = 1.0,    # 1.0 = 100%, 0.5 = 50%
+) -> dict:
+    """
+    Evaluate a scenario of hypothetical bookings against real contract state.
+
+    Each hypothetical is processed in order, with prior hypotheticals
+    treated as committed reservations for availability calculation.
+
+    Returns:
+        {
+            "baseline": {per-contract availability without hypotheticals},
+            "scenario": {per-contract availability with all hypotheticals},
+            "per_booking": [{impact of each hypothetical booking}],
+            "feasible": bool,     # True if all bookings fit within available points
+            "warnings": [str],
+            "total_points_used": int,
+            "total_points_remaining": int,
+        }
+    """
+```
+
+The critical insight is that hypotheticals must be evaluated **sequentially** -- booking #2's availability depends on booking #1 being "committed." The engine treats hypotheticals as additional entries in the reservations list, then recalculates availability after each addition.
+
+**Why Zustand for scenario state:** The scenario builder needs local state that persists across re-renders and can be shared between the builder form and the results panel. React's built-in `useState` could work for simple cases, but Zustand provides cleaner ergonomics for list manipulation (add, remove, reorder hypotheticals) without prop drilling. It is already installed in the project.
+
+**Why server-side computation instead of client-side:** The existing engine is in Python. Duplicating availability calculations in TypeScript would violate the "no business logic in frontend" principle and create divergence risk. The POST payload is small (a few hypothetical bookings), so network overhead is negligible.
+
+---
+
+### Feature 4: Booking Window Alerts
+
+**Scope:** For each contract, show when the 11-month (home resort) and 7-month (all resorts) booking windows open for upcoming dates
+
+**New Files:**
+| File | Purpose |
+|------|---------|
+| `backend/engine/booking_windows.py` | Pure function: compute booking window open dates |
+| `frontend/src/components/BookingWindowAlerts.tsx` | Alert cards showing upcoming window openings |
+
+**Modified Files:**
+| File | Change |
+|------|--------|
+| `backend/api/availability.py` | Enrich availability response with booking window data |
+| `backend/engine/availability.py` | Optionally include booking window calculations |
+| `frontend/src/pages/DashboardPage.tsx` | Add BookingWindowAlerts section |
+| `frontend/src/components/UrgentAlerts.tsx` | Extend to include booking window urgency |
+| `frontend/src/types/index.ts` | Add `BookingWindow` type |
+
+**Domain Rules for Booking Windows:**
+
+The booking window calculation is date arithmetic based on DVC rules:
+
+- **11-month window (home resort):** Opens exactly 11 months before check-in date. Only for the contract's home resort.
+- **7-month window (all eligible resorts):** Opens exactly 7 months before check-in date. For any resort the contract is eligible to book (per resale rules).
+
+Example: For a check-in of March 15, 2027:
+- 11-month window opens: April 15, 2026
+- 7-month window opens: August 15, 2026
+
+**Engine Function Design:**
+
+```python
+# backend/engine/booking_windows.py
+
+from dateutil.relativedelta import relativedelta
+from datetime import date
+
+def compute_booking_windows(
+    contract: dict,
+    target_check_in: date,
+    as_of: date = None,
+) -> dict:
+    """
+    Compute booking window dates for a target check-in date.
+
+    Returns:
+        {
+            "check_in": "2027-03-15",
+            "home_resort_window": {
+                "opens": "2026-04-15",
+                "days_until_open": 64,
+                "is_open": False,
+                "resort": "polynesian",
+            },
+            "all_resorts_window": {
+                "opens": "2026-08-15",
+                "days_until_open": 186,
+                "is_open": False,
+            },
+        }
+    """
+    if as_of is None:
+        as_of = date.today()
+
+    eleven_month_open = target_check_in - relativedelta(months=11)
+    seven_month_open = target_check_in - relativedelta(months=7)
+    # ...
+```
+
+**Integration approach:** The booking window data is derived entirely from dates and contract info -- no DB queries beyond what the availability endpoint already loads. The cleanest integration point is enriching the existing availability API response with optional booking window data, since that endpoint already loads all contracts and can compute windows for significant upcoming dates (e.g., next 6 months of check-in possibilities).
+
+However, a **dedicated endpoint** is simpler to implement and test:
+
+```
+GET /api/booking-windows?months_ahead=6
+```
+
+This returns upcoming booking window openings across all contracts for the next N months. The dashboard page calls this endpoint separately and renders alerts.
+
+---
+
+### Feature 5: Seasonal Cost Heatmap
+
+**Scope:** Visual calendar-style heatmap showing point costs by date for a selected resort and room type
+
+**New Files:**
+| File | Purpose |
+|------|---------|
+| `backend/api/heatmap.py` | Endpoint returning per-day point costs for a resort/room/year |
+| `frontend/src/pages/HeatmapPage.tsx` | New page with resort/room selector + heatmap grid |
+| `frontend/src/components/CostHeatmap.tsx` | Calendar grid with color-coded costs |
+| `frontend/src/hooks/useHeatmap.ts` | TanStack Query hook for heatmap data |
+
+**Modified Files:**
+| File | Change |
+|------|--------|
+| `frontend/src/App.tsx` | Add `/heatmap` route |
+| `frontend/src/components/Layout.tsx` | Add "Cost Heatmap" nav item |
+| `backend/main.py` | Include heatmap router |
+| `frontend/src/types/index.ts` | Add heatmap types |
+
+**Backend Endpoint Design:**
+
+```python
+# backend/api/heatmap.py
+
+@router.get("/api/heatmap/{resort}/{year}/{room_key}")
+async def get_cost_heatmap(resort: str, year: int, room_key: str):
+    """
+    Return per-day point cost for every day of the year.
+
+    Response: {
+        "resort": "polynesian",
+        "year": 2026,
+        "room_key": "deluxe_studio_standard",
+        "days": [
+            {"date": "2026-01-01", "points": 14, "season": "Adventure", "is_weekend": false},
+            {"date": "2026-01-02", "points": 14, "season": "Adventure", "is_weekend": false},
+            ...365 entries
+        ],
+        "min_points": 14,
+        "max_points": 36,
     }
-  ]
+    """
+```
+
+This endpoint iterates through every day of the year, calling the existing `get_point_cost()` function from `backend/data/point_charts.py`. The response includes min/max points so the frontend can compute a color scale.
+
+**Frontend Visualization Strategy: Custom SVG Component (No Library)**
+
+The existing `SeasonCalendar.tsx` component already renders a 12-month calendar grid with per-day color coding by season. The cost heatmap needs the same layout but with continuous color intensity instead of categorical colors.
+
+Use the existing `SeasonCalendar.tsx` pattern as a template. Build a new `CostHeatmap.tsx` that:
+1. Renders 12 month grids (same layout as `SeasonCalendar`)
+2. Colors each day cell on a gradient from green (cheapest) to red (most expensive)
+3. Shows point cost on hover (tooltip)
+4. Optionally highlights the user's available points threshold
+
+**Why no library:** The existing codebase already has the calendar grid rendering pattern in `SeasonCalendar.tsx`. A heatmap library like `react-calendar-heatmap` renders a GitHub-style contribution graph (one row per day-of-week, columns for weeks), which is not the right layout. The month-grid calendar layout already exists and just needs color-by-value instead of color-by-category. Building on the existing pattern keeps the UI consistent and avoids adding a dependency.
+
+**Color Scale Implementation:**
+
+```typescript
+function getCostColor(points: number, min: number, max: number): string {
+  const ratio = (points - min) / (max - min);
+  // Green (low cost) -> Yellow (mid) -> Red (high cost)
+  if (ratio < 0.5) {
+    return `bg-green-${Math.round(ratio * 2 * 4 + 1)}00`;
+  }
+  return `bg-red-${Math.round((ratio - 0.5) * 2 * 4 + 1)}00`;
 }
 ```
 
-### Pattern 3: Pure Function Calculation Engine
+In practice, use Tailwind's built-in color palette with a discrete scale (5-7 levels). Avoid continuous CSS gradients since Tailwind's JIT does not support arbitrary color interpolation cleanly.
 
-**What:** The calculation engine is implemented as stateless, pure functions. Give it contract data, current date, and reservation data; it returns point availability, banking deadlines, and booking options. No database calls, no side effects.
-**When to use:** For all point calculation logic.
-**Trade-offs:** Requires the API layer to fetch data from the DB and pass it to the engine (slightly more code in the API layer), but the engine becomes trivially testable and completely decoupled from storage.
+---
+
+### Feature 6: Configurable Borrowing Policy
+
+**Scope:** Setting to toggle between 100% and 50% borrowing limits
+
+**New Files:**
+| File | Purpose |
+|------|---------|
+| `backend/models/settings.py` | Settings model (key-value store for app settings) |
+| `backend/api/settings.py` | GET/PUT endpoint for settings |
+| `frontend/src/components/SettingsDialog.tsx` | Settings UI (dialog or dedicated section) |
+| `frontend/src/hooks/useSettings.ts` | TanStack Query hook for settings |
+
+**Modified Files:**
+| File | Change |
+|------|--------|
+| `backend/engine/availability.py` | Accept `borrowing_policy` parameter |
+| `backend/engine/scenario.py` | Accept `borrowing_policy` parameter |
+| `backend/api/availability.py` | Read borrowing policy from settings, pass to engine |
+| `backend/main.py` | Include settings router |
+| `frontend/src/types/index.ts` | Add settings types |
+
+**Architecture Decision: Database Settings Table**
+
+Use a simple key-value settings table in SQLite rather than a config file, because:
+1. Settings persist across container recreation (stored in the volume-mounted DB)
+2. The API can read/write settings without filesystem access
+3. Single source of truth for both backend and frontend
 
 ```python
-# engine/availability.py -- pure function, no DB dependency
-
-def calculate_available_points(
-    contracts: list[Contract],
-    reservations: list[Reservation],
-    target_date: date,
-    today: date = date.today()
-) -> list[ContractPointSummary]:
-    """For each contract, compute points available on target_date."""
-    results = []
-    for contract in contracts:
-        current_uy = get_use_year_window(contract.use_year_month, target_date)
-        banking_deadline = current_uy.start + relativedelta(months=8)
-
-        # Current year points: annual allotment minus used/reserved
-        current_year_used = sum(
-            r.points for r in reservations
-            if r.contract_id == contract.id
-            and current_uy.start <= r.check_in < current_uy.end
-        )
-        current_available = contract.annual_points - current_year_used
-
-        # Banked points: carried from prior year (if any, already in DB)
-        # Borrowable: up to 50% of next year's allotment
-        borrowable = contract.annual_points // 2
-
-        results.append(ContractPointSummary(
-            contract=contract,
-            current_year_available=current_available,
-            banked_points=contract.banked_points,
-            borrowable_points=borrowable,
-            banking_deadline=banking_deadline,
-            use_year_end=current_uy.end,
-        ))
-    return results
+# backend/models/settings.py
+class Setting(Base):
+    __tablename__ = "settings"
+    key = Column(String, primary_key=True)
+    value = Column(String, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 ```
 
-## Data Flow
+**Integration with engine:** The borrowing policy is a parameter to engine functions, not a global variable. This keeps functions pure and testable:
 
-### Scraping Flow (Data Ingestion)
+```python
+# Engine function signature -- borrowing_policy is an explicit parameter
+def get_contract_availability(
+    ...,
+    borrowing_policy: float = 1.0,  # 1.0 = 100%, 0.5 = 50%
+) -> dict:
+```
+
+The API route reads the setting from the DB and passes it as a parameter. No engine function reads settings directly.
+
+---
+
+## Component Boundaries Summary
+
+### New Backend Components
+
+| Component | Layer | Depends On | Depended On By |
+|-----------|-------|------------|----------------|
+| `engine/booking_impact.py` | Engine | `engine/availability.py` | `api/trip_explorer.py` |
+| `engine/scenario.py` | Engine | `engine/availability.py`, `engine/booking_impact.py` | `api/scenarios.py` |
+| `engine/booking_windows.py` | Engine | (date math only) | `api/booking_windows.py` or `api/availability.py` |
+| `api/scenarios.py` | API | `engine/scenario.py`, DB models | Frontend |
+| `api/heatmap.py` | API | `data/point_charts.py` | Frontend |
+| `api/settings.py` | API | `models/settings.py` | Frontend |
+| `models/settings.py` | Model | `db/database.py` | `api/settings.py`, `api/availability.py` |
+
+### New Frontend Components
+
+| Component | Type | Depends On |
+|-----------|------|------------|
+| `pages/ScenarioPage.tsx` | Page | `ScenarioBuilder`, `ScenarioResults`, `useScenario` |
+| `pages/HeatmapPage.tsx` | Page | `CostHeatmap`, `useHeatmap` |
+| `components/BookingImpactPanel.tsx` | Component | types only |
+| `components/ScenarioBuilder.tsx` | Component | Zustand store, contract/resort data |
+| `components/ScenarioResults.tsx` | Component | types only |
+| `components/CostHeatmap.tsx` | Component | `SeasonCalendar.tsx` pattern reference |
+| `components/BookingWindowAlerts.tsx` | Component | types only |
+| `components/SettingsDialog.tsx` | Component | `useSettings` |
+| `hooks/useScenario.ts` | Hook | `api.ts` |
+| `hooks/useHeatmap.ts` | Hook | `api.ts` |
+| `hooks/useSettings.ts` | Hook | `api.ts` |
+
+### Modified Existing Components
+
+| Component | Modification Scope |
+|-----------|-------------------|
+| `backend/main.py` | Add 3 routers (scenarios, heatmap, settings) + StaticFiles mount |
+| `backend/api/trip_explorer.py` | Add impact enrichment option |
+| `backend/engine/trip_explorer.py` | Call booking_impact for each result |
+| `backend/engine/availability.py` | Add borrowing_policy parameter |
+| `frontend/src/App.tsx` | Add 2 routes (/scenarios, /heatmap) |
+| `frontend/src/components/Layout.tsx` | Add 2 nav items |
+| `frontend/src/components/TripExplorerResults.tsx` | Add expand/collapse for impact panels |
+| `frontend/src/pages/DashboardPage.tsx` | Add booking window alerts section |
+| `frontend/src/components/UrgentAlerts.tsx` | Extend for booking window urgency |
+| `frontend/src/types/index.ts` | Add 5-6 new type interfaces |
+
+## Data Flow Changes
+
+### Scenario Computation Flow (New)
 
 ```
-[Manual Trigger or Cron]
+[User builds hypothetical list in ScenarioBuilder]
+    │
+    │  Zustand store holds: [{resort, room, dates, contract_id, points_cost}, ...]
     │
     ▼
-[Scheduler] ─── loads saved session ──→ [Playwright Browser]
-    │                                         │
-    │                                    Login to DVC site
-    │                                    (or reuse session)
-    │                                         │
-    │                               ┌─────────┴──────────┐
-    │                               ▼                    ▼
-    │                      [Points Scraper]     [Reservations Scraper]
-    │                               │                    │
-    │                         Extract point        Extract reservation
-    │                         balances, banked      data, dates, costs
-    │                         amounts, contract
-    │                         details
-    │                               │                    │
-    │                               ▼                    ▼
-    │                          [Data Layer — SQLite Database]
-    │                                         │
-    ▼                                    Save session
-[Save session state]                    for next run
-```
-
-### Dashboard Request Flow
-
-```
-[User opens Dashboard]
+[POST /api/scenarios with hypothetical list]
     │
     ▼
-[Frontend] ─── GET /api/dashboard ──→ [API Layer]
-                                          │
-                                    ┌─────┴──────┐
-                                    ▼            ▼
-                              [DB: Contracts] [DB: Reservations]
-                                    │            │
-                                    ▼            ▼
-                              [Engine: calculate_available_points()]
-                                    │
-                                    ▼
-                              [Engine: get_banking_deadlines()]
-                                    │
-                                    ▼
-                              JSON response:
-                              - Points per contract
-                              - Banking deadlines
-                              - Upcoming reservations
-                              - Warnings (expiring points, etc.)
+[api/scenarios.py]
+    │
+    ├── Load contracts, balances, reservations from DB (same pattern as trip_explorer)
+    │
+    ├── Convert to dicts (same ORM-to-dict pattern used everywhere)
+    │
+    └── Call engine/scenario.py with real data + hypotheticals
+         │
+         ├── For hypothetical #1: compute availability with real reservations only
+         │   └── Record: points_before, points_after, delta
+         │
+         ├── For hypothetical #2: compute availability with real + hypothetical #1
+         │   └── Record: points_before, points_after, delta
+         │
+         └── Return cumulative snapshot
+              │
+              ▼
+[ScenarioResults renders per-booking impact + cumulative summary]
 ```
 
-### Trip Explorer Flow
+### Heatmap Data Flow (New)
 
 ```
-[User picks dates + party size]
+[User selects resort + room type on HeatmapPage]
     │
     ▼
-[Frontend] ─── GET /api/trips?check_in=X&check_out=Y&guests=N ──→ [API Layer]
-                                                                       │
-                                                         ┌─────────────┼──────────────┐
-                                                         ▼             ▼              ▼
-                                                   [DB: Contracts] [DB: Reservations] [Point Charts]
-                                                         │             │              │
-                                                         ▼             ▼              │
-                                                   [Engine: calculate_available_points()]
-                                                         │                            │
-                                                         ▼                            ▼
-                                                   [Engine: resolve_eligible_resorts()]
-                                                         │
-                                                         ▼
-                                                   [Engine: calculate_trip_cost()]
-                                                   For each eligible resort/room:
-                                                   - Sum points per night across date range
-                                                   - Compare to available points
-                                                         │
-                                                         ▼
-                                                   JSON response:
-                                                   - List of bookable resort/room combos
-                                                   - Points cost per option
-                                                   - Available points (can you afford it?)
-                                                   - Which contract(s) to use
+[GET /api/heatmap/{resort}/{year}/{room_key}]
+    │
+    ▼
+[api/heatmap.py]
+    │
+    ├── Load point chart (existing load_point_chart function)
+    │
+    ├── Iterate through every day of the year
+    │   └── For each day: call get_point_cost() (existing function)
+    │
+    └── Return array of 365 {date, points, season, is_weekend} objects
+         │
+         ▼
+[CostHeatmap renders 12-month calendar grid with color intensity by cost]
 ```
 
-### Key Data Flows
+### Booking Window Alert Flow (New)
 
-1. **Scrape-to-Store:** Playwright authenticates with Disney member portal, extracts current point balances and reservation data, writes snapshots to SQLite. Runs on demand or scheduled (e.g., daily). Session state persisted to avoid repeated logins.
+```
+[DashboardPage loads]
+    │
+    ├── Existing: GET /api/availability?target_date=today
+    │
+    └── New: GET /api/booking-windows?months_ahead=6
+         │
+         ▼
+    [api/booking_windows.py]
+         │
+         ├── Load contracts from DB
+         │
+         ├── For each contract, compute:
+         │   - 11-month window open dates for next 6 months of check-ins
+         │   - 7-month window open dates for next 6 months of check-ins
+         │
+         └── Return list of upcoming window openings, sorted by date
+              │
+              ▼
+    [BookingWindowAlerts renders on dashboard]
+    "Polynesian 11-month window opens in 3 days for Dec 15 check-in"
+```
 
-2. **Store-to-Calculate:** API endpoints read contracts + reservations from DB, pass them to pure-function calculation engine. Engine computes derived values (available points, banking deadlines, borrowable amounts) without touching the DB.
+## Suggested Build Order
 
-3. **Calculate-to-Present:** API serializes engine output to JSON. Frontend renders dashboards, timelines, and trip options. All computation happens server-side; frontend is a display layer.
+The build order is driven by dependency chains between features and the ability to validate each step independently.
 
-4. **Point Chart Lookup:** Trip Explorer reads point charts from static JSON files. No scraping needed -- charts are published annually and entered manually.
+### Phase 1: Docker Deployment + Configurable Borrowing Policy
 
-## DVC Domain Rules (Critical for Calculation Engine)
+**Rationale:** Docker is infrastructure that enables all other work to be shared. Borrowing policy is a small engine change that establishes the settings pattern used elsewhere.
 
-These rules drive the architecture of the calculation engine. Getting them wrong breaks the app's core value.
+**Build sequence:**
+1. Borrowing policy engine parameter (modify `engine/availability.py`) -- small, testable
+2. Settings model + API endpoint -- establishes the pattern
+3. Settings UI (simple dialog or section)
+4. Dockerfile + docker-compose.yml
+5. FastAPI static file serving (SPA fallback)
+6. `.dockerignore`
+7. Test: `docker compose up` serves the full app with persistent SQLite
 
-### Use Year System
+**Dependencies satisfied:** None needed. This is foundational.
+**Dependencies created:** Docker setup enables deployment of all subsequent features.
 
-- Each contract has a **use year month** (e.g., June). Points for a use year are available from the 1st of that month through the last day of the month before the next use year.
-- Example: June use year = June 1, 2026 through May 31, 2027.
+### Phase 2: Booking Impact Preview + Booking Window Alerts
 
-### Banking Rules
+**Rationale:** These are the smallest new engine features and they enrich existing pages (Trip Explorer, Dashboard) rather than creating new ones. Booking impact is a prerequisite for the scenario playground.
 
-- **100% of current year points** can be banked into the next use year.
-- **Banking deadline:** 8 months into the use year (e.g., June use year = bank by January 31).
-- **After the deadline (months 9-12):** Cannot bank. Use them or lose them.
-- **Banked points can only be banked once.** They cannot be re-banked into a third year.
+**Build sequence:**
+1. `engine/booking_impact.py` -- pure function, tested independently
+2. Enrich Trip Explorer API response with impact data
+3. `BookingImpactPanel.tsx` component
+4. Integrate into `TripExplorerResults.tsx`
+5. `engine/booking_windows.py` -- pure function, date math only
+6. Booking windows API endpoint
+7. `BookingWindowAlerts.tsx` component
+8. Integrate into `DashboardPage.tsx` and `UrgentAlerts.tsx`
 
-### Borrowing Rules
+**Dependencies satisfied:** Booking impact engine is prerequisite for scenarios.
+**Dependencies created:** Scenario playground can reuse booking impact logic.
 
-- **Up to 50% of next year's allotment** can be borrowed into the current use year.
-- Borrowed points reduce next year's available balance.
+### Phase 3: What-If Scenario Playground
 
-### Resale Contract Restrictions
+**Rationale:** This is the most complex new feature. It depends on the booking impact engine from Phase 2 and introduces the first Zustand store.
 
-- **Original 14 DVC resorts (pre-January 2019):** Resale contracts can book at any of the original 14 resorts.
-- **Post-January 2019 resorts** (Riviera, Villas at Disneyland Hotel, Cabins at Fort Wilderness, future resorts): Resale contracts can ONLY book at their home resort.
-- **Direct purchase contracts:** No restrictions, can book anywhere.
-- **Resale contracts additionally cannot access:** Concierge Collection, Disney Collection, Adventurer Collection.
+**Build sequence:**
+1. `engine/scenario.py` -- composes booking impact for multiple hypotheticals
+2. `api/scenarios.py` + Pydantic schemas
+3. Zustand store for scenario state (`useScenarioStore`)
+4. `ScenarioBuilder.tsx` -- form to add hypothetical bookings
+5. `ScenarioResults.tsx` -- cumulative impact display
+6. `ScenarioPage.tsx` + routing + nav
+7. Wire up `useScenario.ts` hook
 
-### Point Chart Structure
+**Dependencies satisfied:** Uses `engine/booking_impact.py` from Phase 2.
 
-- **Per resort:** Each resort has its own chart.
-- **7 seasons per year:** Season names and date ranges vary by resort.
-- **Room types per resort:** Studio, 1BR, 2BR, Grand Villa (plus view categories like Standard, Lake, Theme Park, etc.).
-- **Day-of-week pricing:** Sunday-Thursday (weekday) vs Friday-Saturday (weekend).
-- **Values expressed as points per night.**
-- **Charts published annually** and can change year to year (but total resort-wide points are fixed).
+### Phase 4: Seasonal Cost Heatmap
 
-### The "Up To 4 Years" Rule
+**Rationale:** This is a standalone visualization feature with no dependencies on other v1.1 features. It can be built last since it is additive and does not block other features.
 
-At any given time, a member can theoretically access points spanning up to 4 use years:
-1. Banked points from the prior use year
-2. Current use year points
-3. Borrowed points from the next use year
-4. (Edge case) Points in a use year that hasn't started yet but are committed via reservation
+**Build sequence:**
+1. `api/heatmap.py` -- endpoint using existing `get_point_cost()`
+2. `CostHeatmap.tsx` -- adapted from `SeasonCalendar.tsx` pattern
+3. `HeatmapPage.tsx` + routing + nav
+4. `useHeatmap.ts` hook
 
-The calculation engine must track points across these windows per contract.
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| Disney member portal (disneyvacationclub.disney.go.com) | Playwright browser automation with session persistence | Disney actively discourages scraping (ToS). Use for personal data only. Respect rate limits. Session cookies can be saved/reused to minimize logins. Two-factor auth may be required -- handle interactively on first login, then persist session. |
-| DVC point chart data (public) | Static JSON files, manually updated annually | Available on official site and fan sites (dvcfan.com, dvcnews.com, wdwinfo.com). No scraping needed. |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| Scraper -> Data Layer | Direct DB writes (SQLAlchemy models) | Scraper writes raw snapshots; never reads calculation results |
-| API -> Engine | Function calls (engine is a library, not a service) | API fetches data from DB, passes to engine functions, returns results |
-| API -> Data Layer | SQLAlchemy ORM queries | Standard CRUD operations |
-| Frontend -> API | HTTP REST (JSON) | Frontend is a pure display layer; no business logic |
-| Engine -> Point Charts | File reads (JSON) | Engine loads point chart data from static files at startup or on demand |
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Scraping Inside Request Handlers
-
-**What people do:** Call the scraper from an API endpoint when the user requests fresh data.
-**Why it's wrong:** Scraping takes 10-30+ seconds, involves browser automation, and can fail due to Disney site changes. This blocks the API response and creates a terrible user experience. If the scrape fails, the dashboard shows an error instead of stale-but-usable data.
-**Do this instead:** Scrape on a schedule or via a manual "sync now" button that runs asynchronously. Dashboard always reads from the database. Show "last synced: 2 hours ago" instead of blocking on a live scrape.
-
-### Anti-Pattern 2: Embedding DVC Rules in the Frontend
-
-**What people do:** Put banking deadline calculations, borrowing limit logic, or resale restriction checks in JavaScript/React components.
-**Why it's wrong:** DVC rules are complex and interconnected. Splitting them across frontend and backend creates inconsistency, makes testing harder, and means changes to rules require updating two codebases.
-**Do this instead:** All DVC business logic lives in the backend calculation engine. The frontend displays pre-computed results from the API. The frontend's job is layout and interaction, not point math.
-
-### Anti-Pattern 3: Scraping Point Charts
-
-**What people do:** Build a scraper to extract point charts from the DVC website or fan sites.
-**Why it's wrong:** Point charts change once per year. Building and maintaining a scraper for data that changes annually is massive over-engineering. Charts are available in simple tabular format and can be entered manually in 30 minutes.
-**Do this instead:** Store point charts as static JSON files. Update them once a year when Disney publishes new charts (usually in fall for the following year).
-
-### Anti-Pattern 4: One Giant "Points" Table
-
-**What people do:** Store all point information in a single database table with columns for every possible state.
-**Why it's wrong:** Points have complex lifecycle states (allocated, banked, borrowed, reserved, used, expired) across multiple contracts and use years. A single table becomes an unqueryable mess.
-**Do this instead:** Separate tables for contracts, point allocations (per use year), reservations (with point costs), and banking/borrowing transactions. The calculation engine derives current availability from these normalized records.
-
-## Scaling Considerations
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 1 user (this project) | SQLite database, single FastAPI server, Playwright on same machine. No need for job queues, caching, or horizontal scaling. |
-| 2-5 users (family sharing) | Same architecture works. Add basic auth to protect the dashboard. SQLite handles concurrent reads fine for this scale. |
-| Beyond 5 users | Not a goal. This is a personal tool. Do not over-engineer for scale that will never materialize. |
-
-### Scaling Priorities
-
-1. **First bottleneck (and only one that matters):** Scraper fragility. When Disney changes their site, the scraper breaks. Mitigation: keep scraper isolated, well-logged, and make the rest of the app work fine with stale data. Show clear "last synced" timestamps.
-2. **Second bottleneck:** Point chart accuracy. If charts are entered incorrectly, trip cost calculations are wrong. Mitigation: validate chart data (total points per resort should match known values), add unit tests against known booking costs.
-
-## Build Order (Suggested)
-
-Build order is driven by dependency chains and the ability to validate each layer independently.
-
-### Phase 1: Data Models + Static Data
-
-Build first because everything depends on the data shapes.
-- Define contract, reservation, point balance, and point chart models
-- Enter point chart data for your 2-3 home resorts (static JSON)
-- Set up SQLite database with schema
-- Seed with your actual contract data (manually entered)
-
-**Validates:** You can describe your DVC ownership in structured data.
-
-### Phase 2: Calculation Engine
-
-Build second because it is the core value proposition and can be tested with seed data from Phase 1.
-- Point availability calculator (given contracts + date, what points are available?)
-- Use year date math (banking deadlines, use year windows, expiry dates)
-- Booking eligibility resolver (resale restrictions per contract)
-- Trip cost calculator (given resort + room + dates, how many points?)
-
-**Validates:** Engine produces correct results against hand-calculated examples. Test-driven development is essential here.
-
-### Phase 3: API Layer
-
-Build third because it wraps the engine and data layer for the frontend.
-- Dashboard endpoint (point summary, deadlines, warnings)
-- Trip explorer endpoint (eligible resorts + costs for given dates)
-- Reservation endpoints (CRUD)
-- Manual sync trigger endpoint (placeholder -- scraper comes later)
-
-**Validates:** API returns correct JSON. Can test with curl/Postman.
-
-### Phase 4: Frontend (Dashboard + Trip Explorer)
-
-Build fourth because it consumes the API.
-- Dashboard page (point balances, timelines, banking deadlines)
-- Trip Explorer page (date picker, results grid)
-- Reservation tracker page
-
-**Validates:** Visual confirmation that data flows correctly end-to-end.
-
-### Phase 5: Scraper
-
-Build last because it is the most fragile component and the hardest to test. All other layers work with manually-entered data until the scraper is ready.
-- Playwright authentication with Disney member portal
-- Point balance extraction
-- Reservation data extraction
-- Session persistence (avoid re-login on every run)
-- Sync scheduler (cron or manual trigger)
-
-**Validates:** Scraped data matches what you see on the DVC member site.
+**Dependencies satisfied:** None needed. Uses only existing point chart data layer.
 
 ### Build Order Rationale
 
-- **Engine before scraper:** The engine is the app's brain. Building it first with hand-entered test data means you can validate correctness before adding the complexity of scraping. If the scraper never works perfectly, you still have a useful tool with manual data entry.
-- **Static data before dynamic scraping:** Point charts are static and publicly available. Contract details are known to the owner. Only current point balances and active reservations need scraping. Build the 90% that works without scraping first.
-- **Frontend last (before scraper):** The frontend is pure display. Building it after the API means you are displaying real, tested calculations -- not mock data that might not match reality.
-- **Scraper last:** It depends on an external site you don't control, involves browser automation complexity, and may require handling 2FA. It is the riskiest component. Deferring it means the rest of the app is solid when you tackle the hard part. Even without the scraper, the app is useful for manually-entered data and "what can I book" exploration.
+```
+Phase 1: Docker + Settings     ──> Infrastructure foundation
+    │
+    ▼
+Phase 2: Impact + Windows      ──> Engine extensions, existing page enrichment
+    │
+    ▼
+Phase 3: Scenario Playground   ──> Depends on Phase 2 engine work
+    │
+    ▼
+Phase 4: Cost Heatmap          ──> Independent, additive, no dependencies
+```
+
+- **Docker first** because every subsequent feature should be testable in the Docker environment.
+- **Impact before Scenarios** because the scenario engine composes the booking impact engine.
+- **Booking windows with impact** because both are small engine features that enrich existing pages.
+- **Heatmap last** because it is standalone and purely additive -- it does not affect or depend on any other v1.1 feature.
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Computing Scenarios Client-Side
+
+**What:** Implementing availability calculations in TypeScript so scenarios can be computed locally without API calls.
+**Why bad:** Duplicates the Python engine logic. When DVC rules change (e.g., borrowing policy), you must update two codebases. The engine has 141 tests -- would need to duplicate those too.
+**Instead:** POST hypotheticals to the backend. The round-trip is <100ms for this payload size. Keep all DVC math in Python.
+
+### Anti-Pattern 2: Storing Scenario State in the Database
+
+**What:** Creating a `scenarios` table to persist hypothetical bookings.
+**Why bad:** Scenarios are ephemeral planning exercises, not persisted data. Adding DB tables, migrations, and CRUD for temporary data is over-engineering.
+**Instead:** Hold scenario state in Zustand (frontend memory). The backend is stateless -- it receives the scenario payload, computes, and returns results. If the user refreshes, the scenario is gone. That is acceptable for a planning tool.
+
+### Anti-Pattern 3: Nginx Reverse Proxy in Docker
+
+**What:** Adding an Nginx container in docker-compose to serve frontend static files and proxy API calls.
+**Why bad:** This is a single-user personal tool. An extra container adds complexity to the Docker setup without meaningful performance benefit at this scale. FastAPI's StaticFiles middleware serves static files adequately for a single user.
+**Instead:** Single container. FastAPI serves both API and static files. One container to deploy, one container to debug.
+
+### Anti-Pattern 4: Using a Charting Library for the Heatmap
+
+**What:** Adding D3.js, Chart.js, or a heavy heatmap library for the cost visualization.
+**Why bad:** The calendar grid rendering is already implemented in `SeasonCalendar.tsx`. A library adds bundle size and forces a different visual style than the rest of the app. The heatmap is a colored calendar grid -- not a complex chart.
+**Instead:** Extend the existing `SeasonCalendar` pattern. Same grid layout, same Tailwind styling, but with value-based colors instead of category-based colors.
+
+## Scalability Considerations
+
+| Concern | At Current Scale (1 user, 2-3 contracts) | If Scale Grew (5 users) |
+|---------|------------------------------------------|------------------------|
+| Scenario computation | Instantaneous (<10ms) | Still instantaneous -- at most 20 hypotheticals against 15 contracts |
+| Heatmap endpoint | 365 iterations, cached point chart data. <50ms | Same. Data is static JSON, cached. |
+| Docker SQLite concurrency | Single user, no concurrency issues | SQLite WAL mode handles concurrent reads. Multiple simultaneous writers would need PostgreSQL. |
+| Booking window alerts | Date math for 6 months * N contracts. Trivial. | Still trivial. |
+| Static file serving from FastAPI | Adequate for single user. Vite builds are small. | Adequate. Add Nginx only if serving hundreds of concurrent requests. |
 
 ## Sources
 
-- [DVC Bank/Borrow Official Rules](https://disneyvacationclub.disney.go.com/points/bank-borrow/)
-- [DVC Banking Deadlines FAQ](https://disneyvacationclub.disney.go.com/faq/bank-points/deadlines/)
-- [Understanding the DVC Use Year - DVCinfo](https://dvcinfo.com/dvc-information/buying-dvc/understanding-use-year/)
-- [How to Bank and Borrow Points - DVC Field Guide](https://dvcfieldguide.com/blog/how-to-bank-and-borrow-dvc-points)
-- [DVC Resale Restrictions: Eligible Resorts - DVC Shop](https://dvcshop.com/resale-restrictions-eligible-resorts/)
-- [DVC Resale Restrictions - Fidelity Real Estate](https://www.fidelityrealestate.com/blog/dvc-resale-restrictions/)
-- [How DVC Point Charts Work - DVC Fan](https://dvcfan.com/general-dvc/how-dvc-point-charts-work-a-beginners-guide/)
-- [2026 DVC Point Charts - wdwinfo.com](https://www.wdwinfo.com/disney-vacation-club/dvc-point-charts.htm)
-- [DVC Availability Tools Discussion - DISboards](https://www.disboards.com/threads/dvc-availability-tools.3915367/)
-- [How DVC Availability Charts Work - DVCHelp](https://www.dvchelp.com/page/how-do-the-charts-work)
-- [Playwright Authentication Docs](https://playwright.dev/python/docs/auth)
-- [DVC Points and Flexibility Official](https://disneyvacationclub.disney.go.com/points-and-flexibility/)
+- [FastAPI Docker Deployment (official docs)](https://fastapi.tiangolo.com/deployment/docker/)
+- [FastAPI Static Files (official docs)](https://fastapi.tiangolo.com/tutorial/static-files/)
+- [FastAPI support for React with working react-router (GitHub gist)](https://gist.github.com/ultrafunkamsterdam/b1655b3f04893447c3802453e05ecb5e)
+- [FastAPI + React Dockerize in single container (Medium)](https://dakdeniz.medium.com/fastapi-react-dockerize-in-single-container-e546e80b4e4d)
+- [Docker Persisting Data (official docs)](https://docs.docker.com/get-started/workshop/05_persisting_data/)
+- [Docker Volumes & Data Persistence Guide](https://www.bibekgupta.com/blog/2025/04/docker-volumes-data-persistence-guide)
+- [DVC Booking Windows -- When to Book (official)](https://disneyvacationclub.disney.go.com/faq/resort-reservations/booking-window/)
+- [DVC Home Resort Priority Period (official)](https://disneyvacationclub.disney.go.com/faq/resort-reservations/home-resort-priority/)
+- [DVC 7 and 11-Month Booking Windows Explained (DVC Shop)](https://dvcshop.com/the-7-and-11-month-booking-windows-explained/)
+- [Key DVC Membership Dates Calculation (DVC Field Guide)](https://dvcfieldguide.com/blog/key-membership-dateshow-to-calculate)
+- [react-calendar-heatmap (npm)](https://www.npmjs.com/package/react-calendar-heatmap)
+- [react-heat-map (GitHub)](https://github.com/uiwjs/react-heat-map)
+- [Best heatmap libraries for React (LogRocket)](https://blog.logrocket.com/best-heatmap-libraries-react/)
 
 ---
-*Architecture research for: Personal DVC Dashboard*
-*Researched: 2026-02-09*
+*Architecture research for: DVC Dashboard v1.1 Feature Integration*
+*Researched: 2026-02-10*

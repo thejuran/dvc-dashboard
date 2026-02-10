@@ -1,220 +1,384 @@
-# Feature Research
+# Feature Landscape: v1.1 Planning Tools & Docker Packaging
 
-**Domain:** DVC (Disney Vacation Club) Point Management & Vacation Planning Tool
-**Researched:** 2026-02-09
-**Confidence:** MEDIUM-HIGH (based on comprehensive competitor analysis and DVC community research; DVC domain rules well-documented)
+**Domain:** DVC (Disney Vacation Club) points management -- planning tools and Docker packaging
+**Researched:** 2026-02-10
+**Overall Confidence:** HIGH (features are incremental additions to proven v1.0 engines; DVC domain rules well-documented across multiple sources)
 
-## Feature Landscape
+**Scope:** NEW features only. v1.0 core (contracts, balances, reservations, availability engine, Trip Explorer, point charts with season calendar/stay cost calculator, dashboard with urgent alerts) is already shipped and working.
 
-### Table Stakes (Users Expect These)
+---
 
-Features users assume exist. Missing these = product feels incomplete.
+## Feature Area 1: Booking Impact Preview
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Point balance tracking per contract** | Every DVC tool does this. Owners with 2-3 contracts need to see points across all contracts at a glance. The DVC website itself shows this but poorly for multi-contract owners. | LOW | Core data model: contracts have points, use years, home resorts. Must track current year allocation, banked points, borrowed points, and used points per contract. |
-| **Use year timeline with banking/borrowing** | Banking deadlines are the #1 thing DVC owners forget and lose points over. DVCHelp, DVC Planner, DVC Toolkit all track this. Community spreadsheets (DISboards) exist specifically for this. | MEDIUM | Must model: UY start date, 8-month banking deadline, points expiring if not banked, banked points can't be re-banked. Borrowing up to current limit from next UY. Banking/borrowing are final/irreversible transactions. |
-| **Point cost calculator (dates + resort + room type)** | Every competitor has this. DVC Fan, DVCRequest, DVC Trip Planner, DVC Toolkit all provide point charts lookup. This is the most basic planning feature. | MEDIUM | Requires ingesting annual point charts (released by Disney each year). 7 seasons, weekday/weekend rates, per-resort per-room-type per-view pricing. Charts change yearly with minor adjustments. |
-| **Reservation tracking** | DVC Planner, DVCHelp, and DVC Toolkit all track current/upcoming reservations with point costs, check-in dates, and important associated dates. | LOW | Store resort, room type, dates, points used, which contract points came from. |
-| **Key date reminders** | DVCHelp provides calendar integration. DVC Toolkit has reminders. DVC Planner calculates 11-month, 7-month, and dining reservation dates. Owners forget these constantly. | MEDIUM | Banking deadline (8 months from UY start), 11-month home resort booking window, 7-month non-home booking window, 60-day dining reservations, 30-day holding account threshold. All dates are relative to check-in or UY. |
-| **Resale contract restriction awareness** | Critical for resale owners (the target user). Resale contracts purchased after Jan 19, 2019 at original 14 resorts can only book those 14 resorts. Riviera/Disneyland Hotel/Fort Wilderness resale = home resort only. | LOW | Simple rules engine: based on contract purchase date and home resort, filter available booking resorts. Must be correct -- booking a restricted resort wastes the user's time. |
-| **"What can I afford?" query** | Given my available points for a date range, what resort/room combos can I book? Every point calculator implicitly supports this by showing costs. DVC Toolkit lets you set a max points limit to filter. | MEDIUM | Reverse lookup: instead of "how much does X cost?", answer "what can I get for N points?" across all eligible resorts. Requires point charts + resale restriction filtering. |
+**Purpose:** Before confirming a reservation, show the user exactly how this booking changes their point balances, banking deadlines, and remaining trip-booking capacity.
 
-### Differentiators (Competitive Advantage)
+### Table Stakes
 
-Features that set the product apart. Not required, but valuable.
+| Feature | Why Expected | Complexity | Existing Code Dependency |
+|---------|--------------|------------|--------------------------|
+| Before/after point balance | Core value -- "what will I have left?" | Low | `get_contract_availability()` in `availability.py` |
+| Per-contract breakdown | Multi-contract owners need to know which contract is debited | Low | Existing contract + reservation models |
+| Points remaining after booking | Answers "can I still book something else this year?" | Low | Same availability engine, subtract proposed cost |
+| Season label for the stay dates | Context for whether the cost is high or low for these dates | Low | `get_season_for_date()` in `point_charts.py` |
+| Nightly point breakdown | Already computed by `calculate_stay_cost()`; users expect it in the preview | Low | `calculate_stay_cost()` returns `nightly_breakdown` |
+| Banking deadline awareness | If this booking uses points that could still be banked, warn the user | Med | `get_banking_deadline()` + `allocation_type` tracking on `PointBalance` model |
+| Eligibility validation | Confirm contract can actually book at this resort before showing preview | Low | `get_eligible_resorts()` in `eligibility.py` |
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **DVC website scraping for live data** | No existing tool does this. DVCHelp, DVC Planner, DVC Toolkit all require manual entry of contract info, point balances, and reservations. Automatic sync from the DVC member portal eliminates data entry and ensures accuracy. This is the killer feature. | HIGH | Must authenticate with Disney's member portal, scrape point balances, reservation details, contract info. Fragile (Disney can change their site). Needs session management, error handling, change detection. Single-user app mitigates scale concerns but not fragility. |
-| **Point timeline calculator ("pick a future date, see available points")** | Multi-contract owners struggle to mentally combine points across use years, banking windows, and borrowing limits. No existing tool provides a forward-looking "what will I have available on date X?" view that accounts for upcoming expirations, pending reservations, and banking/borrowing possibilities. | HIGH | Must model point lifecycle: current balance, banked points (expire end of banked-into UY), borrowing eligibility, existing reservation holds, holding account points. Project forward to any future date showing available, expiring-soon, and borrowable points per contract and combined. |
-| **Trip explorer with constraint awareness** | "Show me everywhere I can go in October for 5 nights with my available points" -- filtered by resale restrictions, point availability (including banking/borrowing needed), and room occupancy. Existing tools require you to check one resort at a time. | HIGH | Combines point timeline calculator + point charts + resale restrictions + room capacity data into a single query. Must handle multi-contract point pooling scenarios. |
-| **Point optimization suggestions** | D Point app has a "Point Maximizer" feature. But a tool aware of your actual contracts and point balances could suggest: "Bank 50 points from Contract A before March 31 deadline" or "You can save 12 points by shifting check-in one day later." | HIGH | Requires all underlying data models to be solid. Optimization across banking decisions, date flexibility, and resort alternatives. Could start simple (banking deadline warnings) and grow. |
-| **"What-if" scenario planning** | "If I bank points from Contract A and borrow from Contract B, can I book a 1BR at Poly in December?" No existing tool lets you model hypothetical banking/borrowing decisions before committing them (they're irreversible on the DVC site). | MEDIUM | Build on point timeline calculator. Let user toggle banking/borrowing decisions and see impact on future availability. Critical because banking/borrowing are final -- modeling before committing is hugely valuable. |
-| **Multi-contract point pooling visualization** | DVCHelp mentions tracking point usage across multiple contracts for a single stay. DVC pulls points from contracts in a specific order. Visualizing which contracts fund which reservations helps owners plan. | MEDIUM | DVC pulls points in a specific order (current UY points before banked, home resort before non-home). Visualizing this helps owners understand point flow and plan banking strategically. |
-| **Seasonal cost heatmap** | Show point costs as a calendar heatmap across an entire year for a given resort/room type. Makes it visually obvious when the cheap vs expensive seasons are. Existing tools show point charts as tables; a visual calendar is more intuitive. | LOW | Straightforward data visualization once point charts are loaded. Low effort, high impact for planning. |
+### Differentiators
 
-### Anti-Features (Commonly Requested, Often Problematic)
+| Feature | Value Proposition | Complexity | Existing Code Dependency |
+|---------|-------------------|------------|--------------------------|
+| "Points at risk" callout | Highlight if unbanked points would expire unused after this booking | Med | Use year timeline + availability engine |
+| Alternative room suggestions | "Save X points by choosing room Y instead" shown in preview | Med | `find_affordable_options()` already computes all alternatives for same dates |
+| Undo preview (cancel impact) | For existing reservations, show what cancelling would restore | Low | Inverse of the same availability diff |
 
-Features that seem good but create problems.
+### Anti-Features
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **Multi-user / family sharing** | Families want to collaborate on trip planning | Adds authentication, authorization, data isolation complexity. This is a personal tool for a single owner. Multi-user = 10x complexity for zero benefit in this use case. | Single-user app. Share via screen or export if needed. |
-| **Real-time DVC availability checking** | Knowing if a room is actually bookable is the ultimate feature | DVC availability requires scraping Disney's booking system in real-time, which is technically fragile, legally gray, and rate-limited. DVCapp.com does this as their entire business. Competing here is unnecessary. | Link out to DVCapp.com or DVC member portal for live availability. Focus on "what could I book?" (point math) not "what's available right now?" (live inventory). |
-| **Automated booking** | "Just book it for me when it opens at 8am" | Automating bookings on Disney's platform violates ToS, risks account suspension, and is technically unreliable. | Provide exact booking window dates/times and reminders so the user can book manually at the right moment. |
-| **Point rental marketplace** | DVC owners frequently rent excess points (DVCRequest, DVC Rental Store) | Building a marketplace is a massive product in itself. Legal, payment processing, trust/safety concerns. David's Vacation Club Rentals is a whole company doing just this. | If user wants to rent points, link to existing services. Track "excess points available to rent" as a balance indicator, not a marketplace feature. |
-| **Dining / park reservation planning** | Disney trip planning extends well beyond DVC resort booking | Scope creep into general Disney trip planning (dining at 60 days, park reservations, Genie+, etc.). Hundreds of apps do this. Focus on the DVC points niche. | Track the 60-day dining reservation date as a reminder tied to check-in. Don't build a dining planner. |
-| **Mobile native app** | "I want it on my phone" | Building and maintaining iOS/Android native apps doubles development effort. Single user, personal tool. | Build as a responsive web app (PWA-capable). Works on phone browser. No App Store overhead. |
-| **Annual dues tracking / financial analysis** | Some owners track cost-per-point, ROI, total investment | Financial tracking is a nice-to-have that adds complexity without improving the core "plan my vacation with my points" workflow. | Show dues amount per contract (from point charts data). Don't build a full financial tracker. |
-| **Community features (forums, reviews, tips)** | Social features increase engagement | This is a personal tool, not a community platform. DVCinfo, DISboards, DVC Fan already serve this need. | Link to community resources. Don't build social features. |
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Auto-booking from preview | No DVC API exists; user books on Disney's site | Show preview, user confirms manually, then saves reservation locally |
+| Real-time DVC room availability | No public API for Disney's room inventory; this app tracks YOUR points | Label clearly: "your point budget impact" not "room availability" |
+| Optimized contract selection | Which contract to debit is a personal decision (banking/borrowing preferences) | Show impact per eligible contract; let user choose |
 
-## Feature Dependencies
+### Implementation Notes
+
+The booking impact preview is a **dry-run of the existing availability engine**. The `get_contract_availability()` function is already pure -- it takes `contract_id`, `use_year_month`, `annual_points`, `point_balances`, and `reservations` as arguments with no DB access. The preview workflow:
+
+1. Fetch current state via existing `/api/availability?date=<check_in>`
+2. Compute proposed cost via existing `calculate_stay_cost(resort, room_key, check_in, check_out)`
+3. Add the proposed reservation to the committed list and recompute availability
+4. Diff the two results to produce before/after
+
+**Recommended approach:** A dedicated `POST /api/reservations/preview` endpoint that accepts a proposed reservation body and returns the impact. This centralizes warning logic (banking risk, expiration risk, eligibility) server-side and keeps the frontend thin. The endpoint wraps existing engine functions -- no new computation logic needed.
+
+**Backend effort:** ~1 new endpoint wrapping existing functions. **Frontend effort:** New preview panel/dialog in the reservation creation flow (extends existing `ReservationFormDialog.tsx`). Also integrable into `TripExplorerResults.tsx` as an expandable "impact" row for each option.
+
+---
+
+## Feature Area 2: What-If Scenario Playground
+
+**Purpose:** Let the user explore hypothetical futures. "If I book Trip A, can I still afford Trip B?" / "What if I bank these points?"
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Existing Code Dependency |
+|---------|--------------|------------|--------------------------|
+| Add hypothetical reservation(s) | Core use case -- "if I book this, what's left?" | Med | Availability engine + temporary frontend state |
+| See cumulative impact of multiple hypotheticals | "Trip A + Trip B together" | Med | Stack proposed reservations in a single availability calculation |
+| Clear/reset scenarios | Start fresh without modifying real data | Low | Frontend state management (Zustand already in `package.json`) |
+| Compare scenario vs current reality | Side-by-side or diff view: "now" vs "with these trips" | Med | Two parallel availability computations |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Existing Code Dependency |
+|---------|-------------------|------------|--------------------------|
+| Named/saved scenarios | "Spring Break Plan" vs "Summer Plan" -- save and compare | Med | `localStorage` (simplest) or new DB table |
+| Banking simulation | "What if I bank 50 points from current UY?" | High | Must modify `allocation_type` balances in-memory; complex UY rules (8-month deadline, no re-banking banked points) |
+| Add hypothetical contract | "If I buy 100 more points at Riviera, what could I book?" | Med | Add temporary contract to data passed to availability engine |
+| Timeline visualization | Point balance over 12-18 months with scenario overlaid | High | New charting component; underlying data available from availability engine run at multiple dates |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Scenario persistence to DB by default | Scenarios are exploratory; saving as "real" data causes confusion | Keep in Zustand store; disappears on reload. Offer explicit "save as draft" only if demanded. |
+| Auto-optimization ("best plan") | Too many subjective factors (preferred resorts, travel dates, family size) | Show the numbers; let the user decide |
+| Multi-year scenario modeling | Complexity explosion with UY banking/borrowing/expiration across 2+ years | Limit to current + next use year; flag multi-year as future enhancement |
+
+### Implementation Notes
+
+**Key insight from codebase review:** Both `get_contract_availability()` and `find_affordable_options()` are already pure functions that accept contracts, balances, and reservations as arguments. They have zero DB access. This means the what-if engine is architecturally the same code with different input data. No new computation engine is needed.
+
+The playground workflow:
+1. Fetch real data from existing endpoints (contracts, balances, reservations)
+2. User modifies data in Zustand store (add/remove hypothetical reservations, adjust balances)
+3. Send modified data to `POST /api/scenarios/evaluate` (wraps existing engine functions)
+4. Display results alongside baseline
+
+**Frontend complexity is the bottleneck**, not backend. The UI needs:
+- A scenario workspace page that clones current state into editable Zustand store
+- Ability to add/remove hypothetical reservations (reuse `TripExplorerForm` component pattern)
+- Running total display showing remaining points with all hypotheticals applied
+- Diff view: baseline vs. scenario side-by-side
+
+**Build sequence:** Build booking impact preview first (single hypothetical). The scenario playground extends this to multiple hypotheticals with a dedicated workspace UI.
+
+---
+
+## Feature Area 3: Booking Window Alerts
+
+**Purpose:** Show the user when their 11-month (home resort) and 7-month (non-home) booking windows open for desired travel dates.
+
+### DVC Booking Window Rules (HIGH confidence -- verified across official DVC FAQ, DVC Shop, DVC Field Guide, planDisney)
+
+| Rule | Detail |
+|------|--------|
+| **11-month window** | Opens exactly 11 months before check-in, same day of month. Home resort only. |
+| **7-month window** | Opens exactly 7 months before check-in, same day of month. Any eligible resort. |
+| **Opening time** | 8:00 AM Eastern, online. 9:00 AM Eastern by phone. |
+| **Night limit** | Max 7 consecutive nights at window opening. Additional nights via modification, one at a time. |
+| **End-of-month edge case** | When the booking month has fewer days (e.g., check-in Jan 31 maps to Feb 28/29), multiple check-in dates compress. `dateutil.relativedelta` (already in deps) handles this correctly. |
+| **Resale restriction interaction** | Restricted resort resale (Riviera, DLH, Cabins FW): home resort only, so 7-month is irrelevant. Original 14 resale: 11-month at home, 7-month at other original 13. Direct: 11-month at home, 7-month everywhere. |
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Existing Code Dependency |
+|---------|--------------|------------|--------------------------|
+| Show booking window date for a trip | "When can I book this?" | Low | `relativedelta(months=-11)` and `relativedelta(months=-7)` from check_in. `python-dateutil` already in backend requirements. |
+| Distinguish home vs non-home windows | Different windows depending on contract + target resort | Low | `get_eligible_resorts()` + `contract.home_resort` field |
+| Days-until-window countdown | "Your booking window opens in 12 days" | Low | Simple date arithmetic |
+| Dashboard integration | Show upcoming booking windows in existing alert area | Med | Extend `UrgentAlerts.tsx` (already shows 60-day banking, 90-day expiration alerts) |
+| Color-coded urgency | Red = opens tomorrow, amber = opens this week, green = opens this month | Low | Frontend Tailwind styling only |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Existing Code Dependency |
+|---------|-------------------|------------|--------------------------|
+| Booking window on Trip Explorer results | From Trip Explorer, show "window opens [date]" for each affordable option | Low | Add window date to `TripExplorerOption` response |
+| Window status on reservation form | When creating a reservation, show whether the booking window is already open | Low | Same date calculation in the preview dialog |
+| Waitlist timing guidance | For popular resorts (Poly, Beach Club), note 11-month is critical | Low | Static domain knowledge in UI tooltip |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Email/SMS notifications | No auth, no email infrastructure, personal local tool | In-app dashboard alerts; optionally browser Notification API |
+| DVC booking automation | Violates Disney ToS; risks account suspension | Show exact date/time; user books on Disney's site |
+| Calendar export (iCal) | Over-engineering for v1.1 | Defer to v2; dashboard display covers 95% of the use case |
+
+### Implementation Notes
+
+**Data source for "desired trips":** Alerts need to know what trips the user wants to book. Two options:
+
+1. **Add `planned` status to existing reservation model** -- Join existing `confirmed/pending/cancelled` statuses. A planned reservation has dates and resort but zero point deduction. Pro: single data model, dashboard queries already fetch reservations. Con: slightly overloads the reservation concept.
+
+2. **Compute from Trip Explorer on-the-fly** -- When user searches dates, append booking window dates to results. No persistence. Pro: zero data model changes. Con: no persistent dashboard alerts.
+
+**Recommendation:** Use both. Option 2 is the quick win (add window dates to Trip Explorer results, no schema change). Option 1 adds persistent dashboard alerts for trips the user is actively planning. The `planned` status on the existing `ReservationStatus` enum is a one-line schema addition.
+
+**Backend function (trivial):**
+```python
+from dateutil.relativedelta import relativedelta
+
+def get_booking_windows(check_in: date, is_home_resort: bool) -> dict:
+    return {
+        "home_resort_window": (check_in - relativedelta(months=11)).isoformat(),
+        "non_home_window": (check_in - relativedelta(months=7)).isoformat() if not is_home_resort else None,
+        "home_window_open": date.today() >= check_in - relativedelta(months=11),
+        "non_home_window_open": date.today() >= check_in - relativedelta(months=7) if not is_home_resort else None,
+    }
+```
+
+---
+
+## Feature Area 4: Seasonal Cost Heatmap
+
+**Purpose:** Visualize a full year's point costs as a color-coded calendar so users can spot the cheapest and most expensive dates at a glance.
+
+### Season Structure in Existing Data (HIGH confidence -- verified from `polynesian_2026.json` in codebase)
+
+Using Polynesian 2026 `deluxe_studio_standard` as reference:
+
+| Season | Example Dates | Weekday pts | Weekend pts | Relative Cost |
+|--------|---------------|-------------|-------------|---------------|
+| Adventure | Jan, Sep | 14 | 19 | Cheapest |
+| Choice | Early Feb | 16 | 22 | |
+| Select | Apr-mid Jun, late Aug, Oct-late Nov | 17 | 23 | |
+| Dream | Mid Feb-early Mar, mid Jun-mid Aug | 20 | 26 | |
+| Magic | Mar-mid Apr, late Nov-late Dec | 22 | 29 | |
+| Premier | Dec 24-31 | 28 | 36 | Most Expensive |
+
+Six named seasons for Polynesian. Season names and boundaries vary by resort. The point chart schema supports arbitrary season counts per resort.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Existing Code Dependency |
+|---------|--------------|------------|--------------------------|
+| Calendar-year grid with color-coded days | Core visualization -- see 365 days at a glance | Med | Point chart data from `/api/point-charts/{resort}/{year}` |
+| Resort selector dropdown | Different resorts have different season boundaries and costs | Low | Resort list from `/api/resorts` (17 resorts) |
+| Room type selector dropdown | Costs vary dramatically (studio 14 pts vs bungalow 79 pts) | Low | Room keys in point chart JSON `seasons[].rooms` |
+| Color legend with point values | Map color to cost: green=cheap, red=expensive | Low | Frontend styling |
+| Weekday vs weekend visual distinction | Fri/Sat cost more; must be visible in the grid | Med | Chart schema already has `weekday`/`weekend` fields |
+| Hover tooltip with details | "Jan 15 (Thu): Adventure, 14 pts/night" | Low | Combine season name + point cost from chart data |
+| Season name labels | Show season boundaries/names in the calendar | Low | Season names already in chart data |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Existing Code Dependency |
+|---------|-------------------|------------|--------------------------|
+| "Affordable dates" overlay | Highlight dates where N-night stay is within point balance | Med | Availability engine + sliding-window cost sum |
+| Multi-resort side-by-side | Compare 2 resorts' season patterns | Med | Same rendering, multiple data sets |
+| Stay-length mode | Color = total cost for N nights starting on that date, not just per-night | Med | Sliding window sum across consecutive days |
+| Year-over-year comparison | Compare 2026 vs 2027 season boundary shifts | Low | Load two chart files (only if both exist) |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Real-time room availability overlay | No DVC API; this shows COST not AVAILABILITY | Label: "Point Cost by Date" |
+| All-resort aggregate heatmap | Meaningless to average costs across resorts with different seasons | One resort at a time, fast dropdown switching |
+| All room types simultaneously | Visual noise; overlapping color scales | Single room type selected via dropdown |
+
+### Implementation Notes
+
+**Build custom component vs. library?** Recommendation: **build a custom component.** Rationale:
+- Libraries (`react-calendar-heatmap`, `@uiw/react-heat-map`) use GitHub-contribution-style layout (52 columns x 7 rows), which does NOT match how DVC members read point charts (month-by-month calendars with labeled seasons)
+- A 12-month grid (7 cols for days of week, ~5 rows per month) with Tailwind-styled cells is straightforward
+- No new dependency for a domain-specific visualization
+- Full control over DVC-specific UX: season name labels, weekday/weekend patterns, custom tooltips
+- The existing codebase already uses Tailwind extensively and has shadcn/ui primitives
+
+Using `@nivo/heatmap` (mentioned in previous version of this file) is **not recommended** because nivo adds ~150KB+ to the bundle for a single chart type, and its heatmap layout (rows x columns matrix) does not naturally render as a 12-month calendar grid.
+
+**Color scale (6 stops mapping to season cost tiers):**
+- Deep green: Adventure (cheapest)
+- Medium green: Choice
+- Yellow-green: Select
+- Yellow: Dream
+- Orange: Magic
+- Red: Premier (most expensive)
+
+Maps to existing season names. DVC members already associate these names with cost tiers.
+
+**Backend:** Existing `/api/point-charts/{resort}/{year}` returns all data needed. A convenience endpoint `GET /api/point-charts/{resort}/{year}/daily-costs?room_key=X` returning pre-computed `{date, cost, season_name, is_weekend}` for all 365 days would simplify frontend and keep computation server-side. Uses existing `get_point_cost()` + `get_season_for_date()` in a loop.
+
+**Frontend:** New `SeasonalHeatmap.tsx` component. Complements existing `SeasonCalendar.tsx` (which shows season date ranges as a list, not a visual calendar). New page `HeatmapPage.tsx` or embedded in existing `PointChartsPage.tsx`.
+
+---
+
+## Feature Area 5: Docker Packaging
+
+**Purpose:** Package the app as a single Docker image so other DVC members can self-host with `docker compose up`.
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity | Existing Code Dependency |
+|---------|--------------|------------|--------------------------|
+| Single `docker compose up` starts everything | Standard for self-hosted tools | Med | New: Dockerfile, docker-compose.yml, .dockerignore |
+| SQLite data persisted via volume | Data survives container restarts/rebuilds | Low | Mount `/app/data` (contains `dvc.db` + point chart JSONs) |
+| `.env.example` with documented variables | Users need to know what's configurable | Low | Template file with comments |
+| Multi-stage build (small image) | Build deps not shipped to production | Med | Stage 1: node:22-slim for Vite. Stage 2: python:3.12-slim for runtime |
+| Health check in compose | Container monitoring | Low | Existing `GET /api/health` returns `{"status": "ok"}` |
+| Backend serves frontend static files | Single container, single port, no Nginx | Med | FastAPI `StaticFiles` mount for Vite `dist/` output |
+| Auto DB migration on startup | User never runs manual migration commands | Low | Entrypoint: `alembic upgrade head && uvicorn ...` |
+| Configurable CORS via env var | Currently hardcoded to `localhost:5173` in `main.py` | Low | Read `CORS_ORIGINS` from `os.environ` with sensible default |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity | Existing Code Dependency |
+|---------|-------------------|------------|--------------------------|
+| Docker quickstart in README | First thing GitHub visitors see; lowers try-it friction | Low | Documentation only |
+| Pre-seeded point chart data in image | Works out of the box with 2026 charts | Low | Already in `data/point_charts/` |
+| Volume for custom point charts | Users add their own resort/year JSON files | Low | Same volume mount covers both DB and charts |
+| ARM64 + AMD64 multi-arch | Works on Raspberry Pi, Apple Silicon, x86 servers | Med | `docker buildx --platform` in CI |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Separate frontend/backend containers | Over-engineered for single-user SQLite tool | Single container: FastAPI serves API + static frontend |
+| Nginx/Caddy in compose | Unnecessary for personal tool; users add their own reverse proxy | Uvicorn serves directly; document reverse proxy setup |
+| Built-in HTTPS/TLS | Users deploy behind their own proxy | Document: "put behind Caddy/Traefik for HTTPS" |
+| Postgres/MySQL option | SQLite is correct for single-user tool | SQLite only; document as deliberate design choice |
+| Built-in authentication | Single-user, runs on local network | Document: "do not expose to public internet without auth proxy" |
+
+### Implementation Notes
+
+**Dockerfile (multi-stage):**
 
 ```
-[DVC Website Scraping]
-    |
-    |--populates--> [Point Balance Tracking Per Contract]
-    |                   |
-    |                   |--requires--> [Use Year Timeline with Banking/Borrowing]
-    |                   |                   |
-    |                   |                   |--enables--> [Point Timeline Calculator]
-    |                   |                   |                 |
-    |                   |                   |                 |--enables--> [Trip Explorer]
-    |                   |                   |                 |                 |
-    |                   |                   |                 |                 |--enhances--> [Point Optimization Suggestions]
-    |                   |                   |                 |
-    |                   |                   |                 |--enables--> [What-If Scenario Planning]
-    |                   |                   |
-    |                   |                   |--enables--> [Multi-Contract Point Pooling Visualization]
-    |                   |
-    |                   |--combined-with--> [Point Cost Calculator] --enables--> [Trip Explorer]
-    |
-    |--populates--> [Reservation Tracking]
-    |                   |
-    |                   |--feeds--> [Key Date Reminders]
-    |                   |--feeds--> [Point Timeline Calculator]
-    |
-    |--populates--> [Contract Details] --enables--> [Resale Restriction Awareness]
-    |                                                     |
-    |                                                     |--filters--> [Trip Explorer]
-    |                                                     |--filters--> ["What Can I Afford?" Query]
+Stage 1: node:22-slim (frontend build)
+  - COPY frontend/package*.json, npm ci, COPY frontend/, npm run build
+  - Output: /app/frontend/dist/
 
-[Point Charts Data (Static/Annual)]
-    |
-    |--required-by--> [Point Cost Calculator]
-    |                     |
-    |                     |--enables--> ["What Can I Afford?" Query]
-    |                     |--enables--> [Trip Explorer]
-    |                     |--enables--> [Seasonal Cost Heatmap]
-    |                     |--enables--> [Point Optimization Suggestions]
+Stage 2: python:3.12-slim (runtime)
+  - pip install --no-cache-dir -r requirements.txt
+  - COPY backend/, data/, alembic.ini, migrations
+  - COPY --from=stage1 /app/frontend/dist ./static/
+  - CMD: alembic upgrade head && uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}
 ```
 
-### Dependency Notes
+**FastAPI static file serving (change to `main.py`):**
+```python
+from fastapi.staticfiles import StaticFiles
+# IMPORTANT: mount AFTER all API routers so /api/* routes take priority
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
+```
+The `html=True` parameter enables SPA fallback: requests for `/trips`, `/dashboard`, etc. serve `index.html`, letting React Router handle client-side routing.
 
-- **DVC Website Scraping enables everything:** Without scraping, the user must manually enter all contract info, point balances, and reservations. Scraping is the foundation that eliminates data entry. However, the app must also work with manual entry as a fallback (scraping will break).
-- **Point Charts Data is independently loaded:** Annual point charts are published publicly by Disney. This data can be loaded independently of scraping -- it's static reference data that changes once per year.
-- **Point Timeline Calculator is the core differentiator:** It depends on point balance tracking AND use year timeline modeling. Once built, it enables the trip explorer and what-if planning -- the features that make this tool uniquely valuable.
-- **Resale Restriction Awareness is low-complexity but high-impact:** Simple rules, but filtering all queries through these rules is critical for resale contract owners. Must be applied consistently across trip explorer, "what can I afford?", and point cost calculator.
-- **Trip Explorer combines everything:** It's the culmination feature requiring point timeline, point charts, resale restrictions, and room data all working together.
+**Critical SQLite + Docker volume behavior:** The DB file and point chart JSONs both live in `/app/data/`. Mounting as a named Docker volume means:
+1. **First run:** Docker copies pre-seeded data (charts) from image into volume
+2. **Subsequent runs:** Volume persists DB and any user-added chart files
+3. **Image update:** New files in image do NOT overwrite existing volume data (Docker named volume behavior). This is correct for user data, but means new chart releases need a startup check-and-copy script.
 
-## MVP Definition
+**Point chart update strategy:** On container start, before running the app, check if expected chart files exist in the volume. If missing, copy from a bundled location. This handles "user upgrades image, new 2027 charts are available but volume already has 2026 only."
 
-### Launch With (v1)
+**CORS fix (required):** Current `main.py` line 24 hardcodes `allow_origins=["http://localhost:5173"]`. In Docker, frontend is served from same origin (port 8000), so CORS must either be `["*"]` or dynamically configured:
+```python
+origins = os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+```
 
-Minimum viable product -- what's needed to validate the concept.
+**Environment variables for `.env.example`:**
 
-- [ ] **Contract and point balance data model** -- Store contracts with use years, home resorts, point allocations, resale purchase dates
-- [ ] **Manual data entry** -- Allow entering contract info and point balances by hand (fallback for when scraping isn't ready or breaks)
-- [ ] **Point charts ingestion** -- Load current/upcoming year point charts for all DVC resorts
-- [ ] **Point cost calculator** -- Select dates + resort + room type, see point cost
-- [ ] **Use year timeline** -- Show point allocations, banking deadlines, expiration dates per contract
-- [ ] **Resale restriction filtering** -- Know which resorts each contract can book at
-- [ ] **"What can I afford?" basic query** -- Given a date range and available points, show bookable resort/room options
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DATABASE_URL` | `sqlite+aiosqlite:///./data/dvc.db` | SQLite database path |
+| `PORT` | `8000` | HTTP listen port |
+| `CORS_ORIGINS` | `http://localhost:5173` | Comma-separated allowed origins (`*` for Docker) |
 
-### Add After Validation (v1.x)
+---
 
-Features to add once core is working.
+## Feature Dependencies (v1.1)
 
-- [ ] **DVC website scraping** -- Automate point balance and reservation data import (trigger: manual data entry proves tedious and error-prone)
-- [ ] **Point timeline calculator** -- "Pick a future date, see available points" with banking/borrowing projections (trigger: core data model is solid and tested)
-- [ ] **Reservation tracking with key date reminders** -- Track bookings and surface important dates like banking deadlines, booking windows (trigger: scraping provides reservation data or user enters reservations)
-- [ ] **What-if scenario planning** -- Model banking/borrowing decisions before committing (trigger: point timeline calculator is working)
-- [ ] **Seasonal cost heatmap** -- Visual calendar showing point costs across a year (trigger: point charts are loaded; low effort, high visual impact)
+```
+Docker Packaging ---------> (independent, infrastructure)
 
-### Future Consideration (v2+)
+Seasonal Cost Heatmap ----> (independent, reads existing point chart data)
 
-Features to defer until core product is proven.
+Booking Impact Preview ---> (wraps existing availability + trip explorer engines)
+       |
+       v
+What-If Scenarios --------> (extends preview to multiple hypotheticals + Zustand workspace)
+       |
+       v
+Booking Window Alerts ----> (needs "planned trip" concept; quick-win variant needs only Trip Explorer)
+```
 
-- [ ] **Full trip explorer** -- "Show me everywhere I can go" with all constraints applied (defer: requires all underlying systems to be robust)
-- [ ] **Point optimization suggestions** -- "Bank these points before deadline" or "shift dates to save points" (defer: requires mature data models and reliable scraping)
-- [ ] **Multi-contract point pooling visualization** -- Show which contracts fund which reservations (defer: nice-to-have visualization, not core planning)
-- [ ] **Calendar integration (CalDAV/iCal export)** -- Export key dates to phone calendar (defer: reminders in-app are sufficient initially)
+### Ordering Rationale
 
-## Feature Prioritization Matrix
+1. **Docker** first: infrastructure-only, no feature interaction, unblocks sharing
+2. **Heatmap** early: read-only visualization, no new data models, high visual impact for planning
+3. **Impact Preview** before Scenarios: establishes the "hypothetical availability diff" pattern that Scenarios extend
+4. **Scenarios** after Preview: adds multi-hypothetical workspace UI on the proven preview foundation
+5. **Booking Window Alerts** last or parallel: the quick-win (Trip Explorer enhancement) can ship early, but full dashboard alerts need the `planned` reservation status decision, which benefits from having preview/scenario patterns established
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Point balance tracking per contract | HIGH | LOW | P1 |
-| Use year timeline with banking/borrowing | HIGH | MEDIUM | P1 |
-| Point cost calculator | HIGH | MEDIUM | P1 |
-| Resale restriction filtering | HIGH | LOW | P1 |
-| "What can I afford?" query | HIGH | MEDIUM | P1 |
-| Point charts data ingestion | HIGH | MEDIUM | P1 |
-| Reservation tracking | MEDIUM | LOW | P1 |
-| Key date reminders | HIGH | MEDIUM | P2 |
-| DVC website scraping | HIGH | HIGH | P2 |
-| Point timeline calculator | HIGH | HIGH | P2 |
-| What-if scenario planning | HIGH | MEDIUM | P2 |
-| Seasonal cost heatmap | MEDIUM | LOW | P2 |
-| Trip explorer (full) | HIGH | HIGH | P3 |
-| Point optimization suggestions | MEDIUM | HIGH | P3 |
-| Multi-contract pooling visualization | LOW | MEDIUM | P3 |
-| Calendar export (iCal/CalDAV) | LOW | LOW | P3 |
+---
 
-**Priority key:**
-- P1: Must have for launch -- core point tracking and basic planning
-- P2: Should have, add when possible -- differentiating features that make this tool unique
-- P3: Nice to have, future consideration -- polish and advanced features
+## MVP Scope Per Feature
 
-## Competitor Feature Analysis
+**Booking Impact Preview MVP:** Before/after point balance per contract. Nightly breakdown. Banking deadline warning if applicable. NO alternative room suggestions, NO undo/cancel preview.
 
-| Feature | DVCHelp.com | DVC Toolkit (iOS) | DVC Planner (iOS) | D Point (iOS) | DVC Trip Planner (Web) | Community Spreadsheets | Our Approach |
-|---------|-------------|-------------------|-------------------|---------------|------------------------|------------------------|--------------|
-| Point balance tracking | Yes (manual entry) | Yes (manual entry) | Yes (manual entry) | Yes (manual entry) | No | Yes (manual entry) | **Auto-populated via scraping** + manual fallback |
-| Multi-contract support | Yes | Yes | Yes | Yes | No | Yes | Yes, first-class multi-contract with pooling |
-| Point cost calculator | Yes | Yes | Yes | Yes | Yes | No | Yes, with resale restriction awareness |
-| Use year / banking tracking | Yes | Yes (banking deadlines) | Yes | Yes (bank/borrow tracking) | No | Yes | Yes, with forward-looking timeline projections |
-| Reservation tracking | Yes | Yes (trip mgmt) | Yes | No | Yes (itinerary) | No | Yes, auto-populated from scraping |
-| Date reminders | Yes (email + calendar) | Yes (push notifications) | Yes (calculates dates) | Yes (reminders) | Yes (booking reminders) | No | Yes, in-app + potential calendar export |
-| Availability alerts | No | Yes (paid Plus tier) | No | No | No | No | **Not building** -- link to DVCapp.com |
-| Resale restriction awareness | No | No | No | No | No | No | **Yes -- unique differentiator** for resale owners |
-| Forward-looking point projection | No | No | No | No | No | No | **Yes -- core differentiator** |
-| What-if scenario planning | No | No | No | No | No | No | **Yes -- unique differentiator** |
-| Point optimization | No | No | No | Yes ("Point Maximizer") | No | No | Yes, but deferred to v2+ |
-| Seasonal heatmap | No | No | No | No | No | No | **Yes -- easy visual win** |
-| Auto data sync (scraping) | No | No | No | No | No | No | **Yes -- killer feature** |
-| Platform | Web | iOS only | iOS only | iOS only | Web | Google Sheets | Web (responsive/PWA) |
+**What-If Scenario MVP:** Add/remove hypothetical reservations, see cumulative point impact. Scenarios are ephemeral (Zustand, lost on reload). NO banking simulation, NO saved scenarios, NO timeline chart.
 
-### Key Competitive Gaps We Fill
+**Booking Window Alerts MVP:** Show 11-month and 7-month window open dates on Dashboard for confirmed + pending reservations. Add window dates to Trip Explorer results. NO browser notifications, NO calendar export.
 
-1. **No tool auto-syncs with the DVC member portal.** Every existing tool requires manual data entry. Scraping is our highest-risk, highest-reward differentiator.
-2. **No tool projects point availability into the future.** Owners must do mental math combining use years, banking, borrowing, and existing reservations across multiple contracts. Our point timeline calculator solves this.
-3. **No tool accounts for resale restrictions.** Resale owners (our target user) must mentally filter which resorts their contracts can access. We bake this into every query.
-4. **No tool provides what-if scenario planning.** Banking and borrowing are irreversible. Letting users model these decisions before committing is uniquely valuable.
-5. **Most tools are iOS-only.** Web-based approach is more accessible and avoids App Store friction.
+**Seasonal Cost Heatmap MVP:** Single resort, single room type, full year calendar grid with color-coded days. Weekday costs. Hover tooltips. Resort and room type dropdowns. NO affordable-dates overlay, NO multi-resort comparison, NO stay-length mode.
 
-## DVC Domain Concepts (Reference for Implementation)
+**Docker MVP:** `docker compose up` starts on port 8000 with persisted SQLite. `.env.example` with three variables. Multi-stage Dockerfile. Pre-seeded 2026 charts. NO multi-arch, NO auto-update, NO backup scripts.
 
-Understanding these is critical for correct feature implementation:
-
-| Concept | Rule | Impact on Features |
-|---------|------|-------------------|
-| **Use Year (UY)** | 8 possible start months (Feb, Mar, Apr, Jun, Aug, Sep, Oct, Dec). Points allocated at UY start. | Core date math for all point tracking. |
-| **Banking** | Must bank within first 8 months of UY. Points move to next UY. Irreversible. Banked points can't be re-banked. | Banking deadline is the most critical reminder. Missed deadline = lost points. |
-| **Borrowing** | Can borrow from next UY into current UY. Currently up to 100% (was 50% pre-pandemic, may revert). Irreversible. | Affects future-year point availability. Must track policy changes. |
-| **Holding Account** | Cancel within 30 days of check-in: points go to holding account. Can only be used for reservations within 60 days. Can't bank or borrow. Expire at UY end. | Must track holding account points separately. Affects available point calculations. |
-| **Booking Windows** | Home resort: 11 months before check-in. Non-home: 7 months. Max 7 consecutive nights per booking. | Key date calculations for reminders. |
-| **Resale Restrictions** | Pre-Jan 2019: all 14 original resorts accessible. Post-Jan 2019 original 14: only those 14 (no Riviera, Disneyland Hotel, Fort Wilderness). Riviera/DLH/FW resale: home resort only. | Must filter resort availability per contract. |
-| **Point Charts** | Published annually by Disney. 7 seasons, weekday/weekend rates, per resort/room/view. Minor yearly adjustments. | Static reference data, updated once per year. Need a reliable ingestion process. |
-| **Annual Dues** | Per-point cost, varies by resort, changes annually. | Display only. Not core to point planning. |
+---
 
 ## Sources
 
-- [DVCHelp.com - DVC Tools & Trip Planner](https://www.dvchelp.com/page/dvc-tools) -- Most feature-complete web-based competitor
-- [DVC Toolkit - App Store](https://apps.apple.com/us/app/dvc-toolkit/id1558277298) -- Best-reviewed iOS app with availability alerts
-- [DVC Planner - App Store](https://apps.apple.com/us/app/dvc-planner/id330703403) -- iOS app with vacation planning and point management
-- [DVC by D Point - App Store](https://apps.apple.com/us/app/dvc-by-d-point/id335895986) -- iOS app with Point Maximizer feature
-- [DVC Trip Planner](https://dvctripplanner.com/) -- Web-based point comparison tool
-- [DVCapp.com](https://www.dvcapp.com/) -- Availability monitoring with email/SMS alerts
-- [DVC Fan - Point Charts](https://dvcfan.com/point-charts/) -- Point chart analysis and comparison
-- [DVCRequest/David's Vacation Club - Cost Calculator](https://dvcrequest.com/dvc-guests/cost-calculator) -- Point-to-dollar cost calculator
-- [DISboards - Point Tracker Spreadsheet threads](https://www.disboards.com/threads/my-points-tracker-spreadsheet.3948887/) -- Community spreadsheets showing what owners build themselves
-- [DVC Field Guide - Banking Deadlines](https://dvcfieldguide.com/banking-deadlines) -- Comprehensive DVC deadline reference
-- [DVC Resale Market - Resale Restrictions](https://www.dvcresalemarket.com/blog/new-dvc-resale-restrictions-and-who-is-most-impacted/) -- Resale restriction rules
-- [Disney Vacation Club Official - Points Charts](https://disneyvacationclub.disney.go.com/vacation-planning/points-charts/) -- Official point chart source
-- [Disney Vacation Club Official - Banking/Borrowing](https://disneyvacationclub.disney.go.com/points/bank-borrow/) -- Official banking/borrowing rules
+- DVC Booking Window Rules: [DVC Shop - Booking Windows Explained](https://dvcshop.com/the-7-and-11-month-booking-windows-explained/), [Official DVC FAQ](https://disneyvacationclub.disney.go.com/faq/resort-reservations/booking-window/), [DVC Field Guide - Key Dates Calculator](https://dvcfieldguide.com/blog/key-membership-dateshow-to-calculate), [planDisney - Booking Window Q&A](https://plandisney.disney.go.com/question/calculator-help-determine-date-upon-booking-book-home-546096/), [DVC Help - Use Year & Booking Window](https://www.dvchelp.com/page/use-year-booking-window)
+- DVC Season Structure: [DVCNews - 2026 Charts Released](https://dvcnews.com/dvc-program-menu/policies-a-procedures/dvc-policy-news/6068-disney-vacation-club-points-charts-released-for-2026), [DVC Fan - 2026 Charts](https://dvcfan.com/general-dvc/2026-disney-vacation-club-points-charts/), [DVCNews - 7 Seasons Introduced 2021](https://dvcnews.com/index.php/dvc-program/policies-a-procedures/news-70636/4648-dvc-releases-point-charts-for-2021-increases-calendar-to-7-seasons), [DVC Help - Point Charts by Date](https://www.dvchelp.com/point-charts/all-resorts-by-date)
+- React Heatmap Libraries Evaluated: [react-calendar-heatmap (npm)](https://www.npmjs.com/package/react-calendar-heatmap), [@uiw/react-heat-map](https://github.com/uiwjs/react-heat-map), [Shadcn Calendar Heatmap](https://www.shadcn.io/template/gurbaaz27-shadcn-calendar-heatmap), [Syncfusion React HeatMap](https://www.syncfusion.com/react-components/react-heatmap-chart)
+- Docker Multi-Stage Builds: [Docker Official Docs](https://docs.docker.com/build/building/multi-stage/), [FastAPI Docker Docs](https://fastapi.tiangolo.com/deployment/docker/), [FastAPI+React Single Container](https://dakdeniz.medium.com/fastapi-react-dockerize-in-single-container-e546e80b4e4d), [Serving React with FastAPI](https://davidmuraya.com/blog/serving-a-react-frontend-application-with-fastapi/)
+- Docker SQLite Volumes: [Docker Volumes Docs](https://docs.docker.com/engine/storage/volumes/), [SQLite with Docker Compose](https://www.hibit.dev/posts/215/setting-up-sqlite-with-docker-compose), [SQLite in Docker (2026)](https://github.com/oneuptime/blog/tree/master/posts/2026-02-08-how-to-run-sqlite-in-docker-when-and-how)
+- Docker Env Configuration: [Docker Env Files Best Practices (2026)](https://oneuptime.com/blog/post/2026-01-16-docker-env-files/view)
+- Points Management Tool Patterns: [The Points Guy Calculator](https://thepointsguy.com/news/awards-calculator/), [NerdWallet Points Calculator](https://www.nerdwallet.com/article/travel/calculator-should-you-book-a-flight-with-cash-or-miles), [Upgraded Points Transfer Tool](https://upgradedpoints.com/travel/transfer-partner-tool-calculator/)
+- Codebase: `backend/engine/availability.py`, `backend/engine/trip_explorer.py`, `backend/data/point_charts.py`, `backend/engine/eligibility.py`, `backend/engine/use_year.py`, `backend/models/reservation.py`, `backend/models/contract.py`, `backend/main.py`, `backend/db/database.py`, `frontend/src/components/UrgentAlerts.tsx`, `frontend/src/pages/TripExplorerPage.tsx`, `frontend/src/pages/DashboardPage.tsx`, `data/point_charts/polynesian_2026.json`
 
 ---
-*Feature research for: DVC Point Management & Vacation Planning Tool*
-*Researched: 2026-02-09*
+*Feature research for: DVC Dashboard v1.1 Planning Tools & Docker Packaging*
+*Researched: 2026-02-10*
