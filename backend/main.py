@@ -1,6 +1,10 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from backend.config import get_settings
 from backend.db.database import engine, Base
 from backend.api.contracts import router as contracts_router
 from backend.api.points import router as points_router
@@ -9,6 +13,9 @@ from backend.api.reservations import router as reservations_router
 from backend.api.availability import router as availability_router
 from backend.api.trip_explorer import router as trip_explorer_router
 from backend.data.resorts import load_resorts
+from backend.spa import SPAStaticFiles
+
+settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,7 +28,7 @@ app = FastAPI(title="DVC Dashboard API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite dev server
+    allow_origins=settings.cors_origins.split(",") if settings.cors_origins != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,3 +49,8 @@ async def health_check():
 async def list_resorts():
     """Return all DVC resort metadata from data/resorts.json."""
     return load_resorts()
+
+# SPA mount MUST be LAST -- after all API routers and routes
+_spa_dir = Path(__file__).parent.parent / "frontend" / "dist"
+if _spa_dir.exists():
+    app.mount("/", SPAStaticFiles(directory=str(_spa_dir), html=True), name="spa")
