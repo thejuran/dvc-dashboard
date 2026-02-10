@@ -12,8 +12,8 @@ Build a personal DVC points management dashboard in three phases: first establis
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Foundation** - Project scaffolding, contract/point management, and point chart data
-- [ ] **Phase 2: Calculations & Reservations** - Point timeline calculator, reservation tracking, and trip cost lookup
+- [x] **Phase 1: Data Foundation** - Project scaffolding, contract/point management, and point chart data
+- [x] **Phase 2: Calculations & Reservations** - Point timeline calculator, reservation tracking, and trip cost lookup
 - [ ] **Phase 3: Dashboard & Trip Explorer** - Unified dashboard with alerts and "what can I afford?" trip explorer
 
 ## Phase Details
@@ -31,9 +31,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Project scaffolding + database foundation (backend/frontend setup, models, migrations, resort data)
-- [ ] 01-02: Contract & point balance management (CRUD API + UI, eligibility logic, use year timeline)
-- [ ] 01-03: Point chart data system (JSON schema, data loading, versioned storage, cost lookup API + UI)
+- [x] 01-01: Project scaffolding + database foundation (backend/frontend setup, models, migrations, resort data)
+- [x] 01-02: Contract & point balance management (CRUD API + UI, eligibility logic, use year timeline)
+- [x] 01-03: Point chart data system (JSON schema, data loading, versioned storage, cost lookup API + UI)
 
 ### Phase 2: Calculations & Reservations
 **Goal**: User can pick any future date and see exactly what points are available across all contracts, manage reservations, and look up trip costs -- with reservations properly deducted from all calculations
@@ -45,12 +45,12 @@ Plans:
   3. User can add, edit, and remove reservations with resort, room type, dates, and point cost
   4. User can look up the point cost for a specific resort, room type, and date range
   5. Reservation point costs are correctly deducted from available point balances in all calculations
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [x] 02-01: Reservation model + point availability engine (Reservation SQLAlchemy model, Alembic migration, pure-function availability calculator with reservation deductions)
+- [x] 02-02: Reservation & availability API (CRUD endpoints, eligibility validation, availability query endpoint with per-contract breakdown)
+- [x] 02-03: Reservation & availability UI (Reservations page, point availability page, navigation updates, cost calculator integration)
 
 ### Phase 3: Dashboard & Trip Explorer
 **Goal**: User has a unified home page showing their complete DVC picture at a glance and can query "what can I afford?" to discover bookable options
@@ -73,6 +73,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/3 | Planned | - |
-| 2. Calculations & Reservations | 0/3 | Not started | - |
+| 1. Data Foundation | 3/3 | Complete | 2026-02-09 |
+| 2. Calculations & Reservations | 3/3 | Complete | 2026-02-09 |
 | 3. Dashboard & Trip Explorer | 0/2 | Not started | - |
