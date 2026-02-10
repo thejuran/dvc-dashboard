@@ -60,11 +60,12 @@ Plans:
   1. User sees a dashboard home page with at-a-glance view of all contracts, point balances, and upcoming reservations
   2. Dashboard highlights urgent items: points expiring soon and upcoming banking deadlines
   3. User can query "what can I afford?" for a date range and see all bookable resort/room options filtered by resale eligibility and available points
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01: Trip Explorer backend (engine function + API endpoint composing existing availability, eligibility, and cost functions)
+- [ ] 03-02: Dashboard page (frontend composition of existing endpoints -- summary cards, urgent alerts, upcoming reservations)
+- [ ] 03-03: Trip Explorer UI + navigation updates (trip explorer page with date form and results, dashboard as landing page, nav restructure)
 
 ## Progress
 
@@ -75,4 +76,4 @@ Phases execute in numeric order: 1 -> 2 -> 3
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete | 2026-02-09 |
 | 2. Calculations & Reservations | 3/3 | Complete | 2026-02-09 |
-| 3. Dashboard & Trip Explorer | 0/2 | Not started | - |
+| 3. Dashboard & Trip Explorer | 0/3 | Not started | - |
