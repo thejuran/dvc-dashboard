@@ -1,8 +1,10 @@
 import pytest
+from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from backend.models.contract import Contract, PurchaseType, UseYearMonth
 from backend.models.point_balance import PointBalance, PointAllocationType
+from backend.models.reservation import Reservation, ReservationStatus
 
 
 @pytest.mark.asyncio
@@ -160,3 +162,163 @@ def test_point_allocation_type_enum():
     assert PointAllocationType.BANKED.value == "banked"
     assert PointAllocationType.BORROWED.value == "borrowed"
     assert PointAllocationType.HOLDING.value == "holding"
+
+
+# --- Reservation model tests ---
+
+
+@pytest.mark.asyncio
+async def test_create_reservation(db_session):
+    """Test creating a Reservation linked to a Contract."""
+    contract = Contract(
+        home_resort="polynesian",
+        use_year_month=6,
+        annual_points=160,
+        purchase_type=PurchaseType.RESALE.value,
+    )
+    db_session.add(contract)
+    await db_session.commit()
+    await db_session.refresh(contract)
+
+    reservation = Reservation(
+        contract_id=contract.id,
+        resort="polynesian",
+        room_key="deluxe_studio_standard",
+        check_in=date(2026, 3, 15),
+        check_out=date(2026, 3, 20),
+        points_cost=85,
+        status=ReservationStatus.CONFIRMED.value,
+        confirmation_number="ABC123",
+        notes="Spring break trip",
+    )
+    db_session.add(reservation)
+    await db_session.commit()
+    await db_session.refresh(reservation)
+
+    assert reservation.id is not None
+    assert reservation.contract_id == contract.id
+    assert reservation.resort == "polynesian"
+    assert reservation.room_key == "deluxe_studio_standard"
+    assert reservation.check_in == date(2026, 3, 15)
+    assert reservation.check_out == date(2026, 3, 20)
+    assert reservation.points_cost == 85
+    assert reservation.status == "confirmed"
+    assert reservation.confirmation_number == "ABC123"
+    assert reservation.notes == "Spring break trip"
+    assert reservation.created_at is not None
+    assert reservation.updated_at is not None
+
+
+@pytest.mark.asyncio
+async def test_contract_reservation_relationship(db_session):
+    """Test contract.reservations returns the reservation."""
+    contract = Contract(
+        home_resort="polynesian",
+        use_year_month=6,
+        annual_points=160,
+        purchase_type=PurchaseType.RESALE.value,
+    )
+    db_session.add(contract)
+    await db_session.commit()
+    await db_session.refresh(contract)
+
+    reservation = Reservation(
+        contract_id=contract.id,
+        resort="polynesian",
+        room_key="deluxe_studio_standard",
+        check_in=date(2026, 3, 15),
+        check_out=date(2026, 3, 20),
+        points_cost=85,
+    )
+    db_session.add(reservation)
+    await db_session.commit()
+
+    result = await db_session.execute(
+        select(Contract)
+        .options(selectinload(Contract.reservations))
+        .where(Contract.id == contract.id)
+    )
+    loaded_contract = result.scalar_one()
+    assert len(loaded_contract.reservations) == 1
+    assert loaded_contract.reservations[0].points_cost == 85
+    assert loaded_contract.reservations[0].resort == "polynesian"
+
+
+@pytest.mark.asyncio
+async def test_reservation_cascade_delete(db_session):
+    """Test that deleting a contract cascade-deletes its reservations."""
+    contract = Contract(
+        home_resort="polynesian",
+        use_year_month=6,
+        annual_points=160,
+        purchase_type=PurchaseType.RESALE.value,
+    )
+    db_session.add(contract)
+    await db_session.commit()
+    await db_session.refresh(contract)
+
+    reservation = Reservation(
+        contract_id=contract.id,
+        resort="polynesian",
+        room_key="deluxe_studio_standard",
+        check_in=date(2026, 3, 15),
+        check_out=date(2026, 3, 20),
+        points_cost=85,
+    )
+    db_session.add(reservation)
+    await db_session.commit()
+
+    # Reload with relationships for cascade
+    result = await db_session.execute(
+        select(Contract)
+        .options(selectinload(Contract.reservations), selectinload(Contract.point_balances))
+        .where(Contract.id == contract.id)
+    )
+    loaded_contract = result.scalar_one()
+    await db_session.delete(loaded_contract)
+    await db_session.commit()
+
+    result = await db_session.execute(select(Reservation))
+    remaining = result.scalars().all()
+    assert len(remaining) == 0
+
+
+def test_reservation_status_enum():
+    """Test ReservationStatus enum values."""
+    assert ReservationStatus.CONFIRMED.value == "confirmed"
+    assert ReservationStatus.PENDING.value == "pending"
+    assert ReservationStatus.CANCELLED.value == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_multiple_reservations_for_contract(db_session):
+    """Test creating multiple reservations for one contract."""
+    contract = Contract(
+        home_resort="polynesian",
+        use_year_month=6,
+        annual_points=160,
+        purchase_type=PurchaseType.RESALE.value,
+    )
+    db_session.add(contract)
+    await db_session.commit()
+    await db_session.refresh(contract)
+
+    for i in range(3):
+        reservation = Reservation(
+            contract_id=contract.id,
+            resort="polynesian",
+            room_key="deluxe_studio_standard",
+            check_in=date(2026, 3 + i, 15),
+            check_out=date(2026, 3 + i, 20),
+            points_cost=80 + i * 5,
+        )
+        db_session.add(reservation)
+    await db_session.commit()
+
+    result = await db_session.execute(
+        select(Contract)
+        .options(selectinload(Contract.reservations))
+        .where(Contract.id == contract.id)
+    )
+    loaded_contract = result.scalar_one()
+    assert len(loaded_contract.reservations) == 3

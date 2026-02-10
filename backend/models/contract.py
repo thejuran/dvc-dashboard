@@ -31,3 +31,4 @@ class Contract(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     point_balances = relationship("PointBalance", back_populates="contract", cascade="all, delete-orphan")
+    reservations = relationship("Reservation", back_populates="contract", cascade="all, delete-orphan")
