@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useContracts } from "../hooks/useContracts";
 import { useAvailability } from "../hooks/useAvailability";
 import { useReservations } from "../hooks/useReservations";
+import { useUpcomingBookingWindows } from "../hooks/useBookingWindows";
 import DashboardSummaryCards from "../components/DashboardSummaryCards";
 import UrgentAlerts from "../components/UrgentAlerts";
 import UpcomingReservations from "../components/UpcomingReservations";
@@ -28,6 +29,8 @@ export default function DashboardPage() {
     isLoading: reservationsLoading,
     error: reservationsError,
   } = useReservations({ upcoming: true });
+
+  const { data: bookingWindowAlerts } = useUpcomingBookingWindows();
 
   const isLoading = contractsLoading || availabilityLoading || reservationsLoading;
   const error = contractsError || availabilityError || reservationsError;
@@ -67,7 +70,13 @@ export default function DashboardPage() {
             contracts={contracts}
           />
 
-          {urgentItems.length > 0 && <UrgentAlerts items={urgentItems} />}
+          {(urgentItems.length > 0 ||
+            (bookingWindowAlerts && bookingWindowAlerts.length > 0)) && (
+            <UrgentAlerts
+              items={urgentItems}
+              bookingWindowAlerts={bookingWindowAlerts ?? []}
+            />
+          )}
 
           <UpcomingReservations reservations={reservations} />
         </div>

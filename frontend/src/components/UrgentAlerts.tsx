@@ -1,12 +1,22 @@
-import { AlertTriangleIcon, ClockIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  ClockIcon,
+  CalendarCheckIcon,
+  CalendarClockIcon,
+} from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import type { AvailabilityContractResult } from "../types";
+import type { AvailabilityContractResult, BookingWindowAlert } from "../types";
 
 interface UrgentAlertsProps {
   items: AvailabilityContractResult[];
+  bookingWindowAlerts?: BookingWindowAlert[];
 }
 
-export default function UrgentAlerts({ items }: UrgentAlertsProps) {
+export default function UrgentAlerts({
+  items,
+  bookingWindowAlerts,
+}: UrgentAlertsProps) {
   return (
     <Card className="border-amber-200 bg-amber-50">
       <CardHeader>
@@ -54,6 +64,26 @@ export default function UrgentAlerts({ items }: UrgentAlertsProps) {
 
             return null;
           })}
+          {bookingWindowAlerts?.map((alert, idx) => (
+            <li
+              key={`bw-${alert.window_type}-${alert.resort}-${idx}`}
+              className="flex items-start gap-2 text-sm text-blue-700"
+            >
+              {alert.window_type === "home_resort" ? (
+                <CalendarCheckIcon className="size-4 mt-0.5 shrink-0" />
+              ) : (
+                <CalendarClockIcon className="size-4 mt-0.5 shrink-0" />
+              )}
+              <span>
+                {alert.contract_name} @ {alert.resort_name}:{" "}
+                {alert.window_type === "home_resort" ? "11-month" : "7-month"}{" "}
+                window opens in {alert.days_until_open} day
+                {alert.days_until_open !== 1 ? "s" : ""} (
+                {format(parseISO(alert.window_date), "MMM d")}) -- check-in{" "}
+                {format(parseISO(alert.check_in), "MMM d, yyyy")}
+              </span>
+            </li>
+          ))}
         </ul>
       </CardContent>
     </Card>

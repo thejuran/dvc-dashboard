@@ -223,6 +223,17 @@ export interface TripExplorerResponse {
   total_options: number;
 }
 
+// Dashboard Booking Window Alert type
+export interface BookingWindowAlert {
+  contract_name: string;
+  resort: string;
+  resort_name: string;
+  check_in: string;
+  window_type: "home_resort" | "any_resort";
+  window_date: string;
+  days_until_open: number;
+}
+
 // Booking Impact Preview types
 
 export interface BookingWindowInfo {
