@@ -253,6 +253,60 @@ class TripExplorerResponse(BaseModel):
     total_options: int
 
 
+# Reservation Preview schemas
+
+class ReservationPreviewRequest(BaseModel):
+    contract_id: int
+    resort: str
+    room_key: str
+    check_in: date_type
+    check_out: date_type
+
+    @field_validator("check_out")
+    @classmethod
+    def validate_check_out(cls, v, info):
+        check_in = info.data.get("check_in")
+        if check_in and v <= check_in:
+            raise ValueError("check_out must be after check_in")
+        return v
+
+
+class BookingWindowInfo(BaseModel):
+    home_resort_window: str
+    home_resort_window_open: bool
+    days_until_home_window: int
+    any_resort_window: str
+    any_resort_window_open: bool
+    days_until_any_window: int
+    is_home_resort: bool
+
+
+class BankingWarning(BaseModel):
+    warning: bool
+    bankable_points: int
+    banking_deadline: str
+    days_until_deadline: int
+    message: str
+
+
+class AvailabilitySnapshot(BaseModel):
+    total_points: int
+    committed_points: int
+    available_points: int
+    balances: dict
+
+
+class ReservationPreviewResponse(BaseModel):
+    before: AvailabilitySnapshot
+    after: AvailabilitySnapshot
+    points_delta: int
+    nightly_breakdown: list[NightlyCost]
+    total_points: int
+    num_nights: int
+    booking_windows: BookingWindowInfo
+    banking_warning: BankingWarning | None
+
+
 # App Settings schemas
 
 class AppSettingResponse(BaseModel):

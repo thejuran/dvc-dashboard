@@ -7,9 +7,20 @@ from sqlalchemy.orm import selectinload
 
 from backend.db.database import get_db
 from backend.models.contract import Contract
+from backend.models.point_balance import PointBalance
 from backend.models.reservation import Reservation
-from backend.api.schemas import ReservationCreate, ReservationUpdate, ReservationResponse
+from backend.api.schemas import (
+    ReservationCreate,
+    ReservationUpdate,
+    ReservationResponse,
+    ReservationPreviewRequest,
+    ReservationPreviewResponse,
+    AvailabilitySnapshot,
+    BookingWindowInfo,
+)
 from backend.engine.eligibility import get_eligible_resorts
+from backend.engine.booking_impact import compute_booking_impact, compute_banking_warning
+from backend.engine.booking_windows import compute_booking_windows
 
 router = APIRouter(tags=["reservations"])
 
@@ -54,6 +65,113 @@ async def list_contract_reservations(
         .order_by(Reservation.check_in.asc())
     )
     return result.scalars().all()
+
+
+@router.post(
+    "/api/reservations/preview",
+    response_model=ReservationPreviewResponse,
+)
+async def preview_reservation(
+    data: ReservationPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Preview the impact of a proposed reservation on point balances."""
+    # 1. Load contract
+    result = await db.execute(select(Contract).where(Contract.id == data.contract_id))
+    contract = result.scalar_one_or_none()
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+
+    # 2. Load all point balances for this contract
+    result = await db.execute(
+        select(PointBalance).where(PointBalance.contract_id == data.contract_id)
+    )
+    all_balances = result.scalars().all()
+
+    # 3. Load all non-cancelled reservations for this contract
+    result = await db.execute(
+        select(Reservation).where(
+            Reservation.contract_id == data.contract_id,
+            Reservation.status != "cancelled",
+        )
+    )
+    all_reservations = result.scalars().all()
+
+    # 4. Convert ORM objects to dicts (same pattern as availability API)
+    contract_dict = {
+        "id": contract.id,
+        "use_year_month": contract.use_year_month,
+        "annual_points": contract.annual_points,
+        "home_resort": contract.home_resort,
+    }
+
+    balances_data = [
+        {
+            "contract_id": b.contract_id,
+            "use_year": b.use_year,
+            "allocation_type": b.allocation_type,
+            "points": b.points,
+        }
+        for b in all_balances
+    ]
+
+    reservations_data = [
+        {
+            "contract_id": r.contract_id,
+            "check_in": r.check_in,
+            "points_cost": r.points_cost,
+            "status": r.status,
+        }
+        for r in all_reservations
+    ]
+
+    # 5. Compute booking impact
+    impact = compute_booking_impact(
+        contract=contract_dict,
+        point_balances=balances_data,
+        reservations=reservations_data,
+        proposed_resort=data.resort,
+        proposed_room_key=data.room_key,
+        proposed_check_in=data.check_in,
+        proposed_check_out=data.check_out,
+    )
+
+    # 6. If error (no point chart), return 422
+    if "error" in impact:
+        raise HTTPException(status_code=422, detail=impact["error"])
+
+    # 7. Compute banking warning
+    banking_warning = compute_banking_warning(
+        contract=contract_dict,
+        before_availability=impact["before"],
+        points_cost=impact["stay_cost"]["total_points"],
+    )
+
+    # 8. Determine home resort and compute booking windows
+    is_home_resort = contract.home_resort == data.resort
+    booking_windows = compute_booking_windows(data.check_in, is_home_resort)
+
+    # 9. Assemble response
+    return ReservationPreviewResponse(
+        before=AvailabilitySnapshot(
+            total_points=impact["before"]["total_points"],
+            committed_points=impact["before"]["committed_points"],
+            available_points=impact["before"]["available_points"],
+            balances=impact["before"]["balances"],
+        ),
+        after=AvailabilitySnapshot(
+            total_points=impact["after"]["total_points"],
+            committed_points=impact["after"]["committed_points"],
+            available_points=impact["after"]["available_points"],
+            balances=impact["after"]["balances"],
+        ),
+        points_delta=impact["points_delta"],
+        nightly_breakdown=impact["stay_cost"]["nightly_breakdown"],
+        total_points=impact["stay_cost"]["total_points"],
+        num_nights=impact["stay_cost"]["num_nights"],
+        booking_windows=BookingWindowInfo(**booking_windows),
+        banking_warning=banking_warning,
+    )
 
 
 @router.get("/api/reservations/{reservation_id}", response_model=ReservationResponse)

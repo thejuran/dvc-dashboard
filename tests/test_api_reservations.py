@@ -228,3 +228,138 @@ async def test_multiple_reservations_for_same_contract(client):
 
     resp = await client.get(f"/api/contracts/{cid}/reservations")
     assert len(resp.json()) == 3
+
+
+# --- Preview endpoint tests ---
+
+
+async def _create_contract_with_balance(client, **overrides):
+    """Helper: create contract + point balance, return contract_id."""
+    cid = await _create_contract(client, **overrides)
+    # Add point balance for UY 2025 (June UY covers Jan-May 2026)
+    balance_payload = {
+        "use_year": 2025,
+        "allocation_type": "current",
+        "points": overrides.get("annual_points", 160),
+    }
+    resp = await client.post(f"/api/contracts/{cid}/points", json=balance_payload)
+    assert resp.status_code == 201
+    return cid
+
+
+@pytest.mark.asyncio
+async def test_preview_valid_contract(client):
+    """POST /api/reservations/preview with valid data -> 200 with before/after/booking_windows."""
+    cid = await _create_contract_with_balance(client)
+
+    # Use dates in Jan 2026, Adventure season for polynesian
+    # deluxe_studio_standard weekday=14, weekend=19
+    resp = await client.post("/api/reservations/preview", json={
+        "contract_id": cid,
+        "resort": "polynesian",
+        "room_key": "deluxe_studio_standard",
+        "check_in": "2026-01-12",  # Monday
+        "check_out": "2026-01-15",  # Thursday -> 3 weekday nights
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Check top-level structure
+    assert "before" in data
+    assert "after" in data
+    assert "points_delta" in data
+    assert "nightly_breakdown" in data
+    assert "total_points" in data
+    assert "num_nights" in data
+    assert "booking_windows" in data
+
+    # Check before/after
+    assert data["before"]["available_points"] > data["after"]["available_points"]
+    assert data["points_delta"] == data["total_points"]
+    assert data["num_nights"] == 3
+
+    # Check booking windows has all fields
+    bw = data["booking_windows"]
+    assert "home_resort_window" in bw
+    assert "home_resort_window_open" in bw
+    assert "days_until_home_window" in bw
+    assert "any_resort_window" in bw
+    assert "any_resort_window_open" in bw
+    assert "days_until_any_window" in bw
+    assert "is_home_resort" in bw
+    # polynesian is the home resort for this contract
+    assert bw["is_home_resort"] is True
+
+
+@pytest.mark.asyncio
+async def test_preview_invalid_contract(client):
+    """POST /api/reservations/preview with invalid contract_id -> 404."""
+    resp = await client.post("/api/reservations/preview", json={
+        "contract_id": 999,
+        "resort": "polynesian",
+        "room_key": "deluxe_studio_standard",
+        "check_in": "2026-01-12",
+        "check_out": "2026-01-15",
+    })
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_preview_no_point_chart(client):
+    """POST /api/reservations/preview with resort that has no point chart -> 422."""
+    cid = await _create_contract_with_balance(
+        client, home_resort="bay_lake_tower", purchase_type="direct"
+    )
+
+    resp = await client.post("/api/reservations/preview", json={
+        "contract_id": cid,
+        "resort": "bay_lake_tower",
+        "room_key": "deluxe_studio",
+        "check_in": "2026-01-12",
+        "check_out": "2026-01-15",
+    })
+    assert resp.status_code == 422
+    assert "point chart" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_preview_nightly_breakdown_count(client):
+    """Preview nightly_breakdown has correct number of nights."""
+    cid = await _create_contract_with_balance(client)
+
+    resp = await client.post("/api/reservations/preview", json={
+        "contract_id": cid,
+        "resort": "polynesian",
+        "room_key": "deluxe_studio_standard",
+        "check_in": "2026-01-12",
+        "check_out": "2026-01-16",  # 4 nights
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["nightly_breakdown"]) == 4
+    assert data["num_nights"] == 4
+
+
+@pytest.mark.asyncio
+async def test_preview_booking_windows_fields(client):
+    """Preview booking_windows has all expected fields with correct types."""
+    cid = await _create_contract_with_balance(client)
+
+    resp = await client.post("/api/reservations/preview", json={
+        "contract_id": cid,
+        "resort": "polynesian",
+        "room_key": "deluxe_studio_standard",
+        "check_in": "2026-01-12",
+        "check_out": "2026-01-15",
+    })
+    assert resp.status_code == 200
+    bw = resp.json()["booking_windows"]
+
+    # Verify types
+    assert isinstance(bw["home_resort_window"], str)
+    assert isinstance(bw["home_resort_window_open"], bool)
+    assert isinstance(bw["days_until_home_window"], int)
+    assert isinstance(bw["any_resort_window"], str)
+    assert isinstance(bw["any_resort_window_open"], bool)
+    assert isinstance(bw["days_until_any_window"], int)
+    assert isinstance(bw["is_home_resort"], bool)
