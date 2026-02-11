@@ -37,7 +37,7 @@ export default function TripExplorerPage() {
         </p>
       )}
 
-      {data && <TripExplorerResults data={data} />}
+      {data && <TripExplorerResults data={data} checkIn={checkIn} checkOut={checkOut} />}
 
       {showPrompt && (
         <div className="text-center py-12 border rounded-lg bg-muted/30">

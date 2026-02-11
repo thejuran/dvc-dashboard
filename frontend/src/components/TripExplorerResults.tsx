@@ -1,13 +1,107 @@
+import { useState } from "react";
+import { ChevronDownIcon } from "lucide-react";
 import { parseRoomKey } from "../lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { TripExplorerResponse } from "../types";
+import { useBookingPreview } from "../hooks/useBookingPreview";
+import BookingImpactPanel from "./BookingImpactPanel";
+import BookingWindowBadges from "./BookingWindowBadges";
+import type { TripExplorerResponse, TripExplorerOption } from "../types";
 
 interface TripExplorerResultsProps {
   data: TripExplorerResponse;
+  checkIn: string;
+  checkOut: string;
 }
 
-export default function TripExplorerResults({ data }: TripExplorerResultsProps) {
+function TripExplorerResultCard({
+  option,
+  checkIn,
+  checkOut,
+}: {
+  option: TripExplorerOption;
+  checkIn: string;
+  checkOut: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { data: preview, isLoading } = useBookingPreview(
+    isExpanded
+      ? {
+          contract_id: option.contract_id,
+          resort: option.resort,
+          room_key: option.room_key,
+          check_in: checkIn,
+          check_out: checkOut,
+        }
+      : null
+  );
+
+  const { roomType, view } = parseRoomKey(option.room_key);
+  const remainingPct =
+    option.available_points > 0
+      ? option.points_remaining / option.available_points
+      : 0;
+
+  return (
+    <Card className="cursor-pointer">
+      <CardContent
+        className="pt-4 relative"
+        onClick={() => setIsExpanded((prev) => !prev)}
+      >
+        <ChevronDownIcon
+          className={`absolute top-4 right-4 size-4 text-muted-foreground transition-transform duration-200 ${
+            isExpanded ? "rotate-180" : ""
+          }`}
+        />
+        <p className="font-semibold">{option.resort_name}</p>
+        <p className="text-sm text-muted-foreground">
+          {roomType}
+          {view ? ` — ${view}` : ""}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {option.contract_name}
+        </p>
+        <div className="mt-3 flex items-baseline gap-2">
+          <span className="text-lg font-bold">{option.total_points} pts</span>
+          <span className="text-xs text-muted-foreground">
+            ({option.nightly_avg} pts/night)
+          </span>
+        </div>
+        <div className="mt-2">
+          <Badge
+            variant="secondary"
+            className={
+              remainingPct >= 0.5
+                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                : "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+            }
+          >
+            {option.points_remaining} pts remaining
+          </Badge>
+        </div>
+      </CardContent>
+
+      {isExpanded && (
+        <div className="border-t px-4 py-3 space-y-4">
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading preview...</p>
+          ) : preview ? (
+            <>
+              <BookingImpactPanel preview={preview} />
+              <BookingWindowBadges windows={preview.booking_windows} />
+            </>
+          ) : null}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+export default function TripExplorerResults({
+  data,
+  checkIn,
+  checkOut,
+}: TripExplorerResultsProps) {
   return (
     <div className="space-y-4">
       {/* Coverage info banner */}
@@ -48,48 +142,14 @@ export default function TripExplorerResults({ data }: TripExplorerResultsProps) 
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {data.options.map((option, idx) => {
-            const { roomType, view } = parseRoomKey(option.room_key);
-            const remainingPct =
-              option.available_points > 0
-                ? option.points_remaining / option.available_points
-                : 0;
-
-            return (
-              <Card key={`${option.contract_id}-${option.room_key}-${idx}`}>
-                <CardContent className="pt-4">
-                  <p className="font-semibold">{option.resort_name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {roomType}
-                    {view ? ` — ${view}` : ""}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {option.contract_name}
-                  </p>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="text-lg font-bold">
-                      {option.total_points} pts
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({option.nightly_avg} pts/night)
-                    </span>
-                  </div>
-                  <div className="mt-2">
-                    <Badge
-                      variant="secondary"
-                      className={
-                        remainingPct >= 0.5
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
-                      }
-                    >
-                      {option.points_remaining} pts remaining
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {data.options.map((option, idx) => (
+            <TripExplorerResultCard
+              key={`${option.contract_id}-${option.room_key}-${idx}`}
+              option={option}
+              checkIn={checkIn}
+              checkOut={checkOut}
+            />
+          ))}
         </div>
       )}
     </div>

@@ -318,3 +318,15 @@ class AppSettingResponse(BaseModel):
 
 class AppSettingUpdate(BaseModel):
     value: str
+
+
+# Booking Window Alert schemas
+
+class BookingWindowAlert(BaseModel):
+    contract_name: str
+    resort: str
+    resort_name: str
+    check_in: str
+    window_type: str  # "home_resort" or "any_resort"
+    window_date: str
+    days_until_open: int
