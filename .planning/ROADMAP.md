@@ -61,11 +61,12 @@ Plans:
   1. User can add multiple hypothetical reservations to a scenario and see cumulative point impact across all contracts
   2. User can see a side-by-side comparison of baseline (current reality) vs scenario point balances
   3. User can clear the scenario and start fresh without affecting real data
-**Plans**: TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md -- Scenario engine + evaluation endpoint (compute_scenario_impact, POST /api/scenarios/evaluate, schemas, tests)
+- [ ] 06-02-PLAN.md -- Frontend infrastructure (scenario types, Zustand store, evaluation hook, route, nav item)
+- [ ] 06-03-PLAN.md -- Scenario workspace UI (booking form, booking list, comparison table, full page composition)
 
 #### Phase 7: Seasonal Cost Heatmap
 **Goal**: User can visually compare point costs across an entire year for any resort and room type
@@ -87,5 +88,5 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 4. Docker + Settings | v1.1 | 2/2 | ✓ Complete | 2026-02-10 |
 | 5. Impact + Windows | v1.1 | 3/3 | ✓ Complete | 2026-02-10 |
-| 6. Scenarios | v1.1 | 0/TBD | Not started | - |
+| 6. Scenarios | v1.1 | 0/3 | Planned | - |
 | 7. Heatmap | v1.1 | 0/TBD | Not started | - |
