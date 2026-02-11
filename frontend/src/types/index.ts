@@ -222,3 +222,41 @@ export interface TripExplorerResponse {
   resorts_skipped: string[];
   total_options: number;
 }
+
+// Booking Impact Preview types
+
+export interface BookingWindowInfo {
+  home_resort_window: string;
+  home_resort_window_open: boolean;
+  days_until_home_window: number;
+  any_resort_window: string;
+  any_resort_window_open: boolean;
+  days_until_any_window: number;
+  is_home_resort: boolean;
+}
+
+export interface BankingWarning {
+  warning: boolean;
+  bankable_points: number;
+  banking_deadline: string;
+  days_until_deadline: number;
+  message: string;
+}
+
+export interface AvailabilitySnapshot {
+  total_points: number;
+  committed_points: number;
+  available_points: number;
+  balances: Record<string, number>;
+}
+
+export interface ReservationPreview {
+  before: AvailabilitySnapshot;
+  after: AvailabilitySnapshot;
+  points_delta: number;
+  nightly_breakdown: NightlyCost[];
+  total_points: number;
+  num_nights: number;
+  booking_windows: BookingWindowInfo;
+  banking_warning: BankingWarning | null;
+}
