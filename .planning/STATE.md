@@ -10,25 +10,25 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 5 of 7 (Booking Impact + Booking Windows)
-Plan: 1/3 complete
+Plan: 2/3 complete
 Status: In progress
-Last activity: 2026-02-10 -- Plan 05-01 complete (backend engine + preview API)
+Last activity: 2026-02-10 -- Plan 05-02 complete (frontend booking preview UI)
 
-Progress: [███░░░░░░░] 33%
+Progress: [██████░░░░] 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (v1.1)
-- Average duration: 4m 57s
-- Total execution time: 14m 52s
+- Total plans completed: 4 (v1.1)
+- Average duration: 4m 13s
+- Total execution time: 16m 50s
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 4     | 2     | 9m 48s | 4m 54s |
-| 5     | 1     | 5m 4s  | 5m 4s  |
+| 5     | 2     | 7m 2s  | 3m 31s  |
 
 *Updated after each plan completion*
 
@@ -66,6 +66,9 @@ Phase 5 decisions:
 - DVC end-of-month roll-forward rule for booking window dates (not relativedelta clip-backward)
 - Conservative banking warning: fires when booking COULD consume bankable current-year points
 - Bundle booking impact + booking windows + banking warning in single preview endpoint
+- Inline expand/collapse via useState per card (not shadcn Collapsible)
+- Native HTML details/summary for nightly breakdown (no extra deps)
+- ChevronDown icon with CSS rotate for expand indicator
 
 ### Pending Todos
 
@@ -80,6 +83,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
-Next: Execute 05-02-PLAN.md
+Next: Execute 05-03-PLAN.md
