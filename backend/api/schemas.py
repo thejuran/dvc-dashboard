@@ -330,3 +330,57 @@ class BookingWindowAlert(BaseModel):
     window_type: str  # "home_resort" or "any_resort"
     window_date: str
     days_until_open: int
+
+
+# Scenario Evaluation schemas
+
+class HypotheticalBooking(BaseModel):
+    contract_id: int
+    resort: str
+    room_key: str
+    check_in: date_type
+    check_out: date_type
+
+    @field_validator("check_out")
+    @classmethod
+    def validate_check_out(cls, v, info):
+        check_in = info.data.get("check_in")
+        if check_in and v <= check_in:
+            raise ValueError("check_out must be after check_in")
+        if check_in and (v - check_in).days > 14:
+            raise ValueError("Stay cannot exceed 14 nights")
+        return v
+
+
+class ScenarioEvaluateRequest(BaseModel):
+    hypothetical_bookings: list[HypotheticalBooking]
+
+
+class ContractScenarioResult(BaseModel):
+    contract_id: int
+    contract_name: str
+    home_resort: str
+    baseline_available: int
+    baseline_total: int
+    baseline_committed: int
+    scenario_available: int
+    scenario_total: int
+    scenario_committed: int
+    impact: int
+
+
+class ResolvedBooking(BaseModel):
+    contract_id: int
+    resort: str
+    room_key: str
+    check_in: date_type
+    check_out: date_type
+    points_cost: int
+    num_nights: int
+
+
+class ScenarioEvaluateResponse(BaseModel):
+    contracts: list[ContractScenarioResult]
+    summary: dict
+    resolved_bookings: list[ResolvedBooking]
+    errors: list[dict]
