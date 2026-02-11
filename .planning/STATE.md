@@ -5,29 +5,30 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 4 complete -- ready for Phase 5
+**Current focus:** Phase 5 -- Booking Impact + Booking Windows
 
 ## Current Position
 
-Phase: 4 of 7 (Docker Packaging + Settings) -- COMPLETE
-Plan: 2/2 complete, verified
-Status: Phase complete
-Last activity: 2026-02-10 -- Phase 4 verified (9/9 must-haves, 7/7 requirements)
+Phase: 5 of 7 (Booking Impact + Booking Windows)
+Plan: 1/3 complete
+Status: In progress
+Last activity: 2026-02-10 -- Plan 05-01 complete (backend engine + preview API)
 
-Progress: [██░░░░░░░░] 25%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2 (v1.1)
-- Average duration: 4m 54s
-- Total execution time: 9m 48s
+- Total plans completed: 3 (v1.1)
+- Average duration: 4m 57s
+- Total execution time: 14m 52s
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 4     | 2     | 9m 48s | 4m 54s |
+| 5     | 1     | 5m 4s  | 5m 4s  |
 
 *Updated after each plan completion*
 
@@ -61,6 +62,11 @@ Phase 4 decisions (from planning):
 - Borrowing policy enforced on both create and update of borrowed balances
 - Toggle-style UI cards for policy selection (not dropdown)
 
+Phase 5 decisions:
+- DVC end-of-month roll-forward rule for booking window dates (not relativedelta clip-backward)
+- Conservative banking warning: fires when booking COULD consume bankable current-year points
+- Bundle booking impact + booking windows + banking warning in single preview endpoint
+
 ### Pending Todos
 
 None.
@@ -74,6 +80,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Phase 4 complete
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
-Next: `/gsd:plan-phase 5`
+Next: Execute 05-02-PLAN.md
