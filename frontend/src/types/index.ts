@@ -271,3 +271,51 @@ export interface ReservationPreview {
   booking_windows: BookingWindowInfo;
   banking_warning: BankingWarning | null;
 }
+
+// Scenario types
+
+export interface HypotheticalBooking {
+  id: string;
+  contract_id: number;
+  contract_name: string;
+  resort: string;
+  resort_name: string;
+  room_key: string;
+  check_in: string;
+  check_out: string;
+}
+
+export interface ContractScenarioResult {
+  contract_id: number;
+  contract_name: string;
+  home_resort: string;
+  baseline_available: number;
+  baseline_total: number;
+  baseline_committed: number;
+  scenario_available: number;
+  scenario_total: number;
+  scenario_committed: number;
+  impact: number;
+}
+
+export interface ResolvedBooking {
+  contract_id: number;
+  resort: string;
+  room_key: string;
+  check_in: string;
+  check_out: string;
+  points_cost: number;
+  num_nights: number;
+}
+
+export interface ScenarioEvaluateResponse {
+  contracts: ContractScenarioResult[];
+  summary: {
+    baseline_available: number;
+    scenario_available: number;
+    total_impact: number;
+    num_hypothetical_bookings: number;
+  };
+  resolved_bookings: ResolvedBooking[];
+  errors: { resort: string; room_key: string; error: string }[];
+}
