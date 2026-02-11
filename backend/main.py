@@ -14,6 +14,7 @@ from backend.api.availability import router as availability_router
 from backend.api.trip_explorer import router as trip_explorer_router
 from backend.api.settings import router as settings_router
 from backend.api.booking_windows import router as booking_windows_router
+from backend.api.scenarios import router as scenarios_router
 from backend.data.resorts import load_resorts
 from backend.spa import SPAStaticFiles
 
@@ -44,6 +45,7 @@ app.include_router(availability_router)
 app.include_router(trip_explorer_router)
 app.include_router(settings_router)
 app.include_router(booking_windows_router)
+app.include_router(scenarios_router)
 
 @app.get("/api/health")
 async def health_check():
