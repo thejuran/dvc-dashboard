@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 5 -- Booking Impact + Booking Windows
+**Current focus:** Phase 5 complete -- ready for Phase 6
 
 ## Current Position
 
 Phase: 5 of 7 (Booking Impact + Booking Windows)
 Plan: 3/3 complete
-Status: Phase 5 complete
-Last activity: 2026-02-10 -- Plan 05-03 complete (dashboard booking window alerts)
+Status: Phase complete
+Last activity: 2026-02-10 -- Phase 5 verified (11/11 must-haves, 8/8 requirements)
 
-Progress: [██████████] 100%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -86,6 +86,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 05-03-PLAN.md (Phase 5 complete)
+Stopped at: Phase 5 complete
 Resume file: None
-Next: Begin Phase 6 planning
+Next: `/gsd:plan-phase 6`

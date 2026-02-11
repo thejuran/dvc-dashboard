@@ -15,7 +15,7 @@ Build on the shipped v1.0 dashboard in four phases: first package the app for se
 ### Phases
 
 - [x] **Phase 4: Docker Packaging + Settings** - One-command self-hosting with persistent data and configurable borrowing policy
-- [ ] **Phase 5: Booking Impact + Booking Windows** - See how a potential booking affects your points and when booking windows open
+- [x] **Phase 5: Booking Impact + Booking Windows** - See how a potential booking affects your points and when booking windows open
 - [ ] **Phase 6: What-If Scenarios** - Model multiple hypothetical bookings and compare against reality
 - [ ] **Phase 7: Seasonal Cost Heatmap** - Visual full-year calendar showing point costs by resort and room type
 
@@ -49,9 +49,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- Backend engine + preview API (booking_impact.py, booking_windows.py, POST /api/reservations/preview, tests)
-- [ ] 05-02-PLAN.md -- Trip Explorer expandable cards (BookingImpactPanel, BookingWindowBadges, expandable result cards, preview hook)
-- [ ] 05-03-PLAN.md -- Dashboard booking window alerts (GET /api/booking-windows/upcoming, UrgentAlerts extension)
+- [x] 05-01-PLAN.md -- Backend engine + preview API (booking_impact.py, booking_windows.py, POST /api/reservations/preview, tests)
+- [x] 05-02-PLAN.md -- Trip Explorer expandable cards (BookingImpactPanel, BookingWindowBadges, expandable result cards, preview hook)
+- [x] 05-03-PLAN.md -- Dashboard booking window alerts (GET /api/booking-windows/upcoming, UrgentAlerts extension)
 
 #### Phase 6: What-If Scenarios
 **Goal**: User can model multiple hypothetical bookings in a scenario workspace and compare cumulative impact against their current point reality
@@ -86,6 +86,6 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 4. Docker + Settings | v1.1 | 2/2 | ✓ Complete | 2026-02-10 |
-| 5. Impact + Windows | v1.1 | 0/3 | Planned | - |
+| 5. Impact + Windows | v1.1 | 3/3 | ✓ Complete | 2026-02-10 |
 | 6. Scenarios | v1.1 | 0/TBD | Not started | - |
 | 7. Heatmap | v1.1 | 0/TBD | Not started | - |
