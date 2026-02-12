@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 9 - UX & Security Polish (v1.2)
+**Current focus:** Phase 10 - Open Source & Documentation (v1.2)
 
 ## Current Position
 
-Phase: 9 of 10 (UX & Security Polish)
-Plan: 3 of 3 in current phase (all plans complete)
-Status: Phase complete
-Last activity: 2026-02-12 — Completed 09-02 (mobile responsive)
+Phase: 10 of 10 (Open Source & Documentation)
+Plan: 2 of 3 in current phase
+Status: Executing
+Last activity: 2026-02-12 — Completed 10-02 (CI pipeline)
 
-Progress: [██████████] 100%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -29,7 +29,7 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 8. Code Hardening | 5/5 | 36min | 7.2min |
 | 9. UX & Security Polish | 3/3 | 14min | 4.7min |
-| 10. Open Source & Docs | 0/TBD | - | - |
+| 10. Open Source & Docs | 1/3 | 3min | 3min |
 
 *Updated after each plan completion*
 
@@ -39,6 +39,11 @@ Progress: [██████████] 100%
 
 All v1.0 decisions archived in milestones/v1.0-ROADMAP.md.
 All v1.1 decisions archived in milestones/v1.1-ROADMAP.md.
+
+Phase 10 decisions:
+- 4 parallel CI jobs (backend-test, backend-lint, frontend-lint, docker-build) for fast PR feedback
+- No pip/npm caching in CI -- simplicity over speed for now
+- CI requires no repository secrets or special permissions
 
 Key architectural decisions carrying forward:
 - Monorepo: FastAPI backend + React/Vite frontend
@@ -78,6 +83,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 9 complete (3/3 plans)
+Stopped at: Completed 10-02-PLAN.md (CI pipeline)
 Resume file: None
-Next: /gsd:plan-phase 10 or verify phase 9
+Next: Execute 10-03-PLAN.md (remaining plan)
