@@ -6,12 +6,34 @@ from pydantic import BaseModel, Field, field_validator
 VALID_USE_YEAR_MONTHS = [2, 3, 4, 6, 8, 9, 10, 12]
 
 
+def _strip_str(v: str | None) -> str | None:
+    """Strip whitespace from string fields. Returns None for None input."""
+    if isinstance(v, str):
+        return v.strip()
+    return v
+
+
 class ContractCreate(BaseModel):
     name: str | None = None
     home_resort: str = Field(..., min_length=1)
     use_year_month: int
     annual_points: int = Field(..., gt=0, le=2000)
     purchase_type: str = Field(..., pattern="^(resale|direct)$")
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def strip_name(cls, v):
+        v = _strip_str(v)
+        if v is not None and len(v) > 100:
+            raise ValueError("Name must be 100 characters or fewer")
+        if v is not None and v == "":
+            raise ValueError("Name cannot be empty")
+        return v if v != "" else None
+
+    @field_validator("home_resort", mode="before")
+    @classmethod
+    def strip_home_resort(cls, v):
+        return _strip_str(v)
 
     @field_validator("use_year_month")
     @classmethod
@@ -35,6 +57,21 @@ class ContractUpdate(BaseModel):
     use_year_month: int | None = None
     annual_points: int | None = Field(None, gt=0, le=2000)
     purchase_type: str | None = Field(None, pattern="^(resale|direct)$")
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def strip_name(cls, v):
+        v = _strip_str(v)
+        if v is not None and len(v) > 100:
+            raise ValueError("Name must be 100 characters or fewer")
+        if v is not None and v == "":
+            raise ValueError("Name cannot be empty")
+        return v if v != "" else None
+
+    @field_validator("home_resort", mode="before")
+    @classmethod
+    def strip_home_resort(cls, v):
+        return _strip_str(v)
 
     @field_validator("use_year_month")
     @classmethod
@@ -69,11 +106,11 @@ class ContractResponse(BaseModel):
 class PointBalanceCreate(BaseModel):
     use_year: int = Field(..., ge=2020, le=2035)
     allocation_type: str = Field(..., pattern="^(current|banked|borrowed|holding)$")
-    points: int = Field(..., ge=0)
+    points: int = Field(..., ge=0, le=4000)
 
 
 class PointBalanceUpdate(BaseModel):
-    points: int = Field(..., ge=0)
+    points: int = Field(..., ge=0, le=4000)
 
 
 class PointBalanceResponse(BaseModel):
@@ -102,10 +139,24 @@ class PointChartSummary(BaseModel):
 
 
 class PointCostRequest(BaseModel):
-    resort: str
-    room_key: str
+    resort: str = Field(..., min_length=1, max_length=50)
+    room_key: str = Field(..., min_length=1, max_length=100)
     check_in: str  # ISO date
     check_out: str  # ISO date
+
+    @field_validator("resort", "room_key", mode="before")
+    @classmethod
+    def strip_strings(cls, v):
+        return _strip_str(v)
+
+    @field_validator("check_in", "check_out")
+    @classmethod
+    def validate_date_format(cls, v):
+        try:
+            date_type.fromisoformat(v)
+        except (ValueError, TypeError):
+            raise ValueError("Invalid date format. Use ISO format (YYYY-MM-DD).")
+        return v
 
 
 class NightlyCost(BaseModel):
@@ -130,13 +181,34 @@ class StayCostResponse(BaseModel):
 
 class ReservationCreate(BaseModel):
     resort: str = Field(..., min_length=1)
-    room_key: str = Field(..., min_length=1)
+    room_key: str = Field(..., min_length=1, max_length=100)
     check_in: date_type
     check_out: date_type
-    points_cost: int = Field(..., gt=0)
+    points_cost: int = Field(..., gt=0, le=4000)
     status: str = Field("confirmed", pattern="^(confirmed|pending|cancelled)$")
     confirmation_number: str | None = None
     notes: str | None = None
+
+    @field_validator("resort", "room_key", mode="before")
+    @classmethod
+    def strip_strings(cls, v):
+        return _strip_str(v)
+
+    @field_validator("confirmation_number", mode="before")
+    @classmethod
+    def strip_confirmation_number(cls, v):
+        v = _strip_str(v)
+        if v is not None and len(v) > 50:
+            raise ValueError("Confirmation number must be 50 characters or fewer")
+        return v
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def strip_notes(cls, v):
+        v = _strip_str(v)
+        if v is not None and len(v) > 500:
+            raise ValueError("Notes must be 500 characters or fewer")
+        return v
 
     @field_validator("resort")
     @classmethod
@@ -159,13 +231,34 @@ class ReservationCreate(BaseModel):
 
 class ReservationUpdate(BaseModel):
     resort: str | None = None
-    room_key: str | None = None
+    room_key: str | None = Field(None, max_length=100)
     check_in: date_type | None = None
     check_out: date_type | None = None
-    points_cost: int | None = Field(None, gt=0)
+    points_cost: int | None = Field(None, gt=0, le=4000)
     status: str | None = Field(None, pattern="^(confirmed|pending|cancelled)$")
     confirmation_number: str | None = None
     notes: str | None = None
+
+    @field_validator("resort", "room_key", mode="before")
+    @classmethod
+    def strip_strings(cls, v):
+        return _strip_str(v)
+
+    @field_validator("confirmation_number", mode="before")
+    @classmethod
+    def strip_confirmation_number(cls, v):
+        v = _strip_str(v)
+        if v is not None and len(v) > 50:
+            raise ValueError("Confirmation number must be 50 characters or fewer")
+        return v
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def strip_notes(cls, v):
+        v = _strip_str(v)
+        if v is not None and len(v) > 500:
+            raise ValueError("Notes must be 500 characters or fewer")
+        return v
 
     @field_validator("resort")
     @classmethod
@@ -263,12 +356,19 @@ class ReservationPreviewRequest(BaseModel):
     check_in: date_type
     check_out: date_type
 
+    @field_validator("resort", "room_key", mode="before")
+    @classmethod
+    def strip_strings(cls, v):
+        return _strip_str(v)
+
     @field_validator("check_out")
     @classmethod
     def validate_check_out(cls, v, info):
         check_in = info.data.get("check_in")
         if check_in and v <= check_in:
             raise ValueError("check_out must be after check_in")
+        if check_in and (v - check_in).days > 14:
+            raise ValueError("Stay cannot exceed 14 nights")
         return v
 
 
@@ -318,7 +418,12 @@ class AppSettingResponse(BaseModel):
 
 
 class AppSettingUpdate(BaseModel):
-    value: str
+    value: str = Field(..., max_length=50)
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def strip_value(cls, v):
+        return _strip_str(v)
 
 
 # Booking Window Alert schemas
@@ -337,10 +442,15 @@ class BookingWindowAlert(BaseModel):
 
 class HypotheticalBooking(BaseModel):
     contract_id: int
-    resort: str
-    room_key: str
+    resort: str = Field(..., min_length=1)
+    room_key: str = Field(..., min_length=1)
     check_in: date_type
     check_out: date_type
+
+    @field_validator("resort", "room_key", mode="before")
+    @classmethod
+    def strip_strings(cls, v):
+        return _strip_str(v)
 
     @field_validator("check_out")
     @classmethod
@@ -355,6 +465,13 @@ class HypotheticalBooking(BaseModel):
 
 class ScenarioEvaluateRequest(BaseModel):
     hypothetical_bookings: list[HypotheticalBooking]
+
+    @field_validator("hypothetical_bookings")
+    @classmethod
+    def validate_max_bookings(cls, v):
+        if len(v) > 10:
+            raise ValueError("Maximum 10 hypothetical bookings")
+        return v
 
 
 class ContractScenarioResult(BaseModel):
