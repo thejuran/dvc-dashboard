@@ -136,7 +136,7 @@ async def test_evaluate_missing_contract(client):
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
     field_names = [f["field"] for f in body["error"]["fields"]]
-    assert "contract_id" in field_names
+    assert "hypothetical_bookings[0].contract_id" in field_names
 
 
 @pytest.mark.asyncio
