@@ -1,7 +1,6 @@
-import pytest
 from datetime import date
-from backend.engine.scenario import compute_scenario_impact
 
+from backend.engine.scenario import compute_scenario_impact
 
 # Test fixtures mirroring test_booking_impact.py patterns.
 # Uses polynesian/deluxe_studio_standard for Jan 2026 (Adventure season: weekday=14, weekend=19).

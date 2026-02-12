@@ -1,25 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.db.database import get_db
-from backend.models.contract import Contract
+from backend.api.errors import NotFoundError
 from backend.api.schemas import (
     ContractCreate,
-    ContractUpdate,
     ContractResponse,
+    ContractUpdate,
     ContractWithDetails,
     PointBalanceResponse,
 )
+from backend.db.database import get_db
 from backend.engine.eligibility import get_eligible_resorts
 from backend.engine.use_year import (
-    get_use_year_start,
-    get_use_year_end,
-    get_banking_deadline,
-    get_current_use_year,
     build_use_year_timeline,
+    get_current_use_year,
 )
+from backend.models.contract import Contract
 
 router = APIRouter(prefix="/api/contracts", tags=["contracts"])
 
@@ -75,7 +73,7 @@ async def get_contract(contract_id: int, db: AsyncSession = Depends(get_db)):
     )
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
     return _enrich_contract(contract)
 
 
@@ -103,7 +101,7 @@ async def update_contract(
     result = await db.execute(select(Contract).where(Contract.id == contract_id))
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -124,7 +122,7 @@ async def delete_contract(contract_id: int, db: AsyncSession = Depends(get_db)):
     )
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     await db.delete(contract)
     await db.commit()

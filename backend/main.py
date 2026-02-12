@@ -2,20 +2,29 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from backend.config import get_settings
-from backend.db.database import engine, Base
-from backend.api.contracts import router as contracts_router
-from backend.api.points import router as points_router
-from backend.api.point_charts import router as point_charts_router
-from backend.api.reservations import router as reservations_router
 from backend.api.availability import router as availability_router
-from backend.api.trip_explorer import router as trip_explorer_router
-from backend.api.settings import router as settings_router
 from backend.api.booking_windows import router as booking_windows_router
+from backend.api.contracts import router as contracts_router
+from backend.api.errors import (
+    AppError,
+    handle_app_error,
+    handle_http_exception,
+    handle_pydantic_validation,
+    handle_unhandled,
+)
+from backend.api.point_charts import router as point_charts_router
+from backend.api.points import router as points_router
+from backend.api.reservations import router as reservations_router
 from backend.api.scenarios import router as scenarios_router
+from backend.api.settings import router as settings_router
+from backend.api.trip_explorer import router as trip_explorer_router
+from backend.config import get_settings
 from backend.data.resorts import load_resorts
+from backend.db.database import Base, engine
 from backend.spa import SPAStaticFiles
 
 settings = get_settings()
@@ -28,6 +37,12 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="DVC Dashboard API", version="0.1.0", lifespan=lifespan)
+
+# Register structured error handlers BEFORE including routers
+app.add_exception_handler(AppError, handle_app_error)
+app.add_exception_handler(StarletteHTTPException, handle_http_exception)
+app.add_exception_handler(RequestValidationError, handle_pydantic_validation)
+app.add_exception_handler(Exception, handle_unhandled)
 
 app.add_middleware(
     CORSMiddleware,

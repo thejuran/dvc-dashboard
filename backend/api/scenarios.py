@@ -1,21 +1,22 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.errors import ValidationError
+from backend.api.schemas import (
+    ContractScenarioResult,
+    ResolvedBooking,
+    ScenarioEvaluateRequest,
+    ScenarioEvaluateResponse,
+)
 from backend.db.database import get_db
+from backend.engine.eligibility import get_eligible_resorts
+from backend.engine.scenario import compute_scenario_impact
 from backend.models.contract import Contract
 from backend.models.point_balance import PointBalance
 from backend.models.reservation import Reservation
-from backend.api.schemas import (
-    ScenarioEvaluateRequest,
-    ScenarioEvaluateResponse,
-    ContractScenarioResult,
-    ResolvedBooking,
-)
-from backend.engine.eligibility import get_eligible_resorts
-from backend.engine.scenario import compute_scenario_impact
 
 router = APIRouter(tags=["scenarios"])
 
@@ -54,19 +55,25 @@ async def evaluate_scenario(
     for hb in data.hypothetical_bookings:
         contract = contract_map.get(hb.contract_id)
         if not contract:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Contract {hb.contract_id} not found",
+            raise ValidationError(
+                "Validation failed",
+                fields=[{
+                    "field": "contract_id",
+                    "issue": f"Contract {hb.contract_id} not found",
+                }],
             )
         eligible = get_eligible_resorts(contract.home_resort, contract.purchase_type)
         if hb.resort not in eligible:
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    f"Resort '{hb.resort}' is not eligible for contract {hb.contract_id} "
-                    f"({contract.purchase_type} at {contract.home_resort}). "
-                    f"Eligible resorts: {eligible}"
-                ),
+            raise ValidationError(
+                "Validation failed",
+                fields=[{
+                    "field": "resort",
+                    "issue": (
+                        f"Resort '{hb.resort}' is not eligible for contract {hb.contract_id} "
+                        f"({contract.purchase_type} at {contract.home_resort}). "
+                        f"Eligible resorts: {eligible}"
+                    ),
+                }],
             )
 
     # 4. Load all point balances

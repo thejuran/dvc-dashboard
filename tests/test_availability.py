@@ -1,7 +1,6 @@
-import pytest
 from datetime import date
-from backend.engine.availability import get_contract_availability, get_all_contracts_availability
 
+from backend.engine.availability import get_all_contracts_availability, get_contract_availability
 
 # --- Basic availability tests ---
 

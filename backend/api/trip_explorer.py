@@ -1,14 +1,15 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.errors import ValidationError
 from backend.db.database import get_db
+from backend.engine.trip_explorer import find_affordable_options
 from backend.models.contract import Contract
 from backend.models.point_balance import PointBalance
 from backend.models.reservation import Reservation
-from backend.engine.trip_explorer import find_affordable_options
 
 router = APIRouter(tags=["trip-explorer"])
 
@@ -27,15 +28,15 @@ async def trip_explorer(
     """
     # Validation
     if check_out <= check_in:
-        raise HTTPException(
-            status_code=422,
-            detail="check_out must be after check_in",
+        raise ValidationError(
+            "Validation failed",
+            fields=[{"field": "check_out", "issue": "check_out must be after check_in"}],
         )
     num_nights = (check_out - check_in).days
     if num_nights > 14:
-        raise HTTPException(
-            status_code=422,
-            detail="Stay cannot exceed 14 nights",
+        raise ValidationError(
+            "Validation failed",
+            fields=[{"field": "check_out", "issue": "Stay cannot exceed 14 nights"}],
         )
 
     # Load all contracts

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.errors import NotFoundError, ValidationError
+from backend.api.schemas import AppSettingResponse, AppSettingUpdate
 from backend.db.database import get_db
 from backend.models.app_setting import AppSetting
-from backend.api.schemas import AppSettingResponse, AppSettingUpdate
 
 router = APIRouter(tags=["settings"])
 
@@ -27,7 +28,7 @@ async def get_setting(key: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(AppSetting).where(AppSetting.key == key))
     setting = result.scalar_one_or_none()
     if not setting:
-        raise HTTPException(status_code=404, detail=f"Setting '{key}' not found")
+        raise NotFoundError(f"Setting '{key}' not found")
     return setting
 
 
@@ -35,13 +36,16 @@ async def get_setting(key: str, db: AsyncSession = Depends(get_db)):
 async def update_setting(key: str, data: AppSettingUpdate, db: AsyncSession = Depends(get_db)):
     """Update a setting value. Only known keys with valid values are accepted."""
     if key not in SETTINGS_SCHEMA:
-        raise HTTPException(status_code=404, detail=f"Unknown setting '{key}'")
+        raise NotFoundError(f"Unknown setting '{key}'")
 
     schema = SETTINGS_SCHEMA[key]
     if data.value not in schema["allowed"]:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Invalid value '{data.value}' for '{key}'. Allowed: {schema['allowed']}"
+        raise ValidationError(
+            "Validation failed",
+            fields=[{
+                "field": "value",
+                "issue": f"Invalid value '{data.value}' for '{key}'. Allowed: {schema['allowed']}",
+            }],
         )
 
     result = await db.execute(select(AppSetting).where(AppSetting.key == key))

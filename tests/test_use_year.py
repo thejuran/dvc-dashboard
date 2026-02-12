@@ -1,5 +1,6 @@
 from datetime import date
-from backend.engine.use_year import get_use_year_start, get_use_year_end, get_banking_deadline
+
+from backend.engine.use_year import get_banking_deadline, get_use_year_end, get_use_year_start
 
 
 def test_june_use_year_start():

@@ -1,4 +1,5 @@
 from datetime import date
+
 from dateutil.relativedelta import relativedelta
 
 USE_YEAR_MONTHS = [2, 3, 4, 6, 8, 9, 10, 12]
@@ -20,7 +21,7 @@ def get_banking_deadline(use_year_month: int, year: int) -> date:
     return eight_months - relativedelta(days=1)
 
 
-def get_current_use_year(use_year_month: int, as_of: date = None) -> int:
+def get_current_use_year(use_year_month: int, as_of: date | None = None) -> int:
     """Determine which use year is current as of a given date."""
     if as_of is None:
         as_of = date.today()
@@ -32,7 +33,7 @@ def get_current_use_year(use_year_month: int, as_of: date = None) -> int:
         return as_of.year - 1
 
 
-def get_use_year_status(use_year_month: int, use_year: int, as_of: date = None) -> str:
+def get_use_year_status(use_year_month: int, use_year: int, as_of: date | None = None) -> str:
     """Return 'expired', 'active', or 'upcoming' for a use year."""
     if as_of is None:
         as_of = date.today()
@@ -46,7 +47,7 @@ def get_use_year_status(use_year_month: int, use_year: int, as_of: date = None) 
         return "upcoming"
 
 
-def build_use_year_timeline(use_year_month: int, use_year: int, as_of: date = None) -> dict:
+def build_use_year_timeline(use_year_month: int, use_year: int, as_of: date | None = None) -> dict:
     """Build a complete timeline dict for a given use year."""
     if as_of is None:
         as_of = date.today()

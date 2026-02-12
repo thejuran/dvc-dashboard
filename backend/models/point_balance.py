@@ -1,10 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.orm import relationship
-from backend.db.database import Base
 import enum
 from datetime import datetime
 
-class PointAllocationType(str, enum.Enum):
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
+from backend.db.database import Base
+
+
+class PointAllocationType(enum.StrEnum):
     CURRENT = "current"       # current use year allocation
     BANKED = "banked"         # banked from prior use year
     BORROWED = "borrowed"     # borrowed from next use year

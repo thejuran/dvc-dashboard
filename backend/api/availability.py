@@ -1,14 +1,14 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.db.database import get_db
+from backend.engine.availability import get_all_contracts_availability
 from backend.models.contract import Contract
 from backend.models.point_balance import PointBalance
 from backend.models.reservation import Reservation
-from backend.engine.availability import get_all_contracts_availability
 
 router = APIRouter(tags=["availability"])
 

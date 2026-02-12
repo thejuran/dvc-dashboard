@@ -1,18 +1,19 @@
 from datetime import date
-from fastapi import APIRouter, HTTPException
 
-from backend.data.point_charts import (
-    load_point_chart,
-    get_available_charts,
-    calculate_stay_cost,
-)
-from backend.data.resorts import get_resort_by_slug
+from fastapi import APIRouter
+
+from backend.api.errors import NotFoundError, ValidationError
 from backend.api.schemas import (
     PointChartSummary,
     PointCostRequest,
-    NightlyCost,
     StayCostResponse,
 )
+from backend.data.point_charts import (
+    calculate_stay_cost,
+    get_available_charts,
+    load_point_chart,
+)
+from backend.data.resorts import get_resort_by_slug
 
 router = APIRouter(prefix="/api/point-charts", tags=["point-charts"])
 
@@ -52,7 +53,7 @@ async def get_chart(resort: str, year: int):
     """Get a specific resort's point chart for a year."""
     chart = load_point_chart(resort, year)
     if chart is None:
-        raise HTTPException(status_code=404, detail="Point chart not found")
+        raise NotFoundError("Point chart not found")
     return chart
 
 
@@ -61,7 +62,7 @@ async def get_chart_rooms(resort: str, year: int):
     """Get parsed room types for a resort/year chart."""
     chart = load_point_chart(resort, year)
     if chart is None:
-        raise HTTPException(status_code=404, detail="Point chart not found")
+        raise NotFoundError("Point chart not found")
 
     # Get view categories from resorts.json for smart parsing
     resort_data = get_resort_by_slug(resort)
@@ -79,7 +80,7 @@ async def get_chart_seasons(resort: str, year: int):
     """Get season structure (names and date ranges) without room costs."""
     chart = load_point_chart(resort, year)
     if chart is None:
-        raise HTTPException(status_code=404, detail="Point chart not found")
+        raise NotFoundError("Point chart not found")
 
     seasons = [
         {"name": s["name"], "date_ranges": s["date_ranges"]}
@@ -94,32 +95,41 @@ async def calculate_cost(request: PointCostRequest):
     try:
         check_in = date.fromisoformat(request.check_in)
         check_out = date.fromisoformat(request.check_out)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use ISO format (YYYY-MM-DD).")
+    except ValueError as exc:
+        raise ValidationError(
+            "Validation failed",
+            fields=[{"field": "check_in", "issue": "Invalid date format. Use ISO format (YYYY-MM-DD)."}],
+        ) from exc
 
     if check_out <= check_in:
-        raise HTTPException(status_code=400, detail="Check-out must be after check-in.")
+        raise ValidationError(
+            "Validation failed",
+            fields=[{"field": "check_out", "issue": "Check-out must be after check-in."}],
+        )
 
     if (check_out - check_in).days > 14:
-        raise HTTPException(status_code=400, detail="Maximum stay is 14 nights.")
+        raise ValidationError(
+            "Validation failed",
+            fields=[{"field": "check_out", "issue": "Maximum stay is 14 nights."}],
+        )
 
     # Check chart exists
     chart = load_point_chart(request.resort, check_in.year)
     if chart is None:
-        raise HTTPException(status_code=404, detail="Point chart not found for this resort/year.")
+        raise NotFoundError("Point chart not found for this resort/year.")
 
     # Validate room key exists
     room_keys = set()
     for season in chart["seasons"]:
         room_keys.update(season["rooms"].keys())
     if request.room_key not in room_keys:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid room key '{request.room_key}'. Available: {sorted(room_keys)}"
+        raise ValidationError(
+            "Validation failed",
+            fields=[{"field": "room_key", "issue": f"Invalid room key '{request.room_key}'. Available: {sorted(room_keys)}"}],
         )
 
     result = calculate_stay_cost(request.resort, request.room_key, check_in, check_out)
     if result is None:
-        raise HTTPException(status_code=400, detail="Could not calculate cost. Dates may be out of range.")
+        raise ValidationError("Could not calculate cost. Dates may be out of range.")
 
     return result

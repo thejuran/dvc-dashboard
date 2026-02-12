@@ -143,14 +143,14 @@ async def test_calculate_cost_multi_season(client):
 
 @pytest.mark.asyncio
 async def test_calculate_cost_invalid_room(client):
-    """POST /api/point-charts/calculate with invalid room returns 400."""
+    """POST /api/point-charts/calculate with invalid room returns 422."""
     resp = await client.post("/api/point-charts/calculate", json={
         "resort": "polynesian",
         "room_key": "nonexistent_room",
         "check_in": "2026-01-12",
         "check_out": "2026-01-15",
     })
-    assert resp.status_code == 400
+    assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -167,23 +167,23 @@ async def test_calculate_cost_missing_chart(client):
 
 @pytest.mark.asyncio
 async def test_calculate_cost_checkout_before_checkin(client):
-    """POST /api/point-charts/calculate with checkout before checkin returns 400."""
+    """POST /api/point-charts/calculate with checkout before checkin returns 422."""
     resp = await client.post("/api/point-charts/calculate", json={
         "resort": "polynesian",
         "room_key": "deluxe_studio_standard",
         "check_in": "2026-01-15",
         "check_out": "2026-01-12",
     })
-    assert resp.status_code == 400
+    assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
 async def test_calculate_cost_exceeds_max_nights(client):
-    """POST /api/point-charts/calculate with >14 nights returns 400."""
+    """POST /api/point-charts/calculate with >14 nights returns 422."""
     resp = await client.post("/api/point-charts/calculate", json={
         "resort": "polynesian",
         "room_key": "deluxe_studio_standard",
         "check_in": "2026-01-01",
         "check_out": "2026-01-20",
     })
-    assert resp.status_code == 400
+    assert resp.status_code == 422

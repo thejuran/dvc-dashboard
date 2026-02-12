@@ -1,14 +1,14 @@
-from datetime import date, timedelta
+from datetime import date
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.data.resorts import get_resort_by_slug
 from backend.db.database import get_db
+from backend.engine.booking_windows import compute_booking_windows
 from backend.models.contract import Contract
 from backend.models.reservation import Reservation
-from backend.engine.booking_windows import compute_booking_windows
-from backend.data.resorts import get_resort_by_slug
 
 router = APIRouter(tags=["booking-windows"])
 

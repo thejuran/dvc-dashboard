@@ -1,16 +1,16 @@
 import logging
-from collections import defaultdict
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
 
+from backend.api.errors import ConflictError, NotFoundError, ValidationError
+from backend.api.schemas import PointBalanceCreate, PointBalanceResponse, PointBalanceUpdate
 from backend.db.database import get_db
+from backend.engine.use_year import build_use_year_timeline, get_current_use_year
+from backend.models.app_setting import AppSetting
 from backend.models.contract import Contract
 from backend.models.point_balance import PointBalance
-from backend.models.app_setting import AppSetting
-from backend.api.schemas import PointBalanceCreate, PointBalanceUpdate, PointBalanceResponse
-from backend.engine.use_year import get_current_use_year, build_use_year_timeline
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ async def get_contract_points(contract_id: int, db: AsyncSession = Depends(get_d
     result = await db.execute(select(Contract).where(Contract.id == contract_id))
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     # Fetch all point balances for this contract
     result = await db.execute(
@@ -84,7 +84,7 @@ async def create_point_balance(
     result = await db.execute(select(Contract).where(Contract.id == contract_id))
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     # Check for duplicate (same contract + use_year + allocation_type)
     result = await db.execute(
@@ -98,20 +98,20 @@ async def create_point_balance(
     )
     existing = result.scalar_one_or_none()
     if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                f"Point balance already exists for contract {contract_id}, "
-                f"use year {data.use_year}, type '{data.allocation_type}'. "
-                "Use PUT to update it."
-            ),
+        raise ConflictError(
+            f"Point balance already exists for contract {contract_id}, "
+            f"use year {data.use_year}, type '{data.allocation_type}'. "
+            "Use PUT to update it."
         )
 
     # Validate: banked points cannot exceed annual_points
     if data.allocation_type == "banked" and data.points > contract.annual_points:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Banked points ({data.points}) cannot exceed annual points ({contract.annual_points})",
+        raise ValidationError(
+            "Validation failed",
+            fields=[{
+                "field": "points",
+                "issue": f"Banked points ({data.points}) cannot exceed annual points ({contract.annual_points})",
+            }],
         )
 
     # Enforce borrowing policy
@@ -119,12 +119,15 @@ async def create_point_balance(
         borrowing_limit_pct = await get_borrowing_limit_pct(db)
         max_borrowed = int(contract.annual_points * borrowing_limit_pct / 100)
         if data.points > max_borrowed:
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    f"Borrowed points ({data.points}) exceed borrowing limit "
-                    f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
-                ),
+            raise ValidationError(
+                "Validation failed",
+                fields=[{
+                    "field": "points",
+                    "issue": (
+                        f"Borrowed points ({data.points}) exceed borrowing limit "
+                        f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
+                    ),
+                }],
             )
 
     balance = PointBalance(
@@ -147,7 +150,7 @@ async def update_point_balance(
     result = await db.execute(select(PointBalance).where(PointBalance.id == balance_id))
     balance = result.scalar_one_or_none()
     if not balance:
-        raise HTTPException(status_code=404, detail="Point balance not found")
+        raise NotFoundError("Point balance not found")
 
     # If updating a borrowed balance, enforce borrowing policy
     if balance.allocation_type == "borrowed":
@@ -159,12 +162,15 @@ async def update_point_balance(
             borrowing_limit_pct = await get_borrowing_limit_pct(db)
             max_borrowed = int(contract.annual_points * borrowing_limit_pct / 100)
             if data.points > max_borrowed:
-                raise HTTPException(
-                    status_code=422,
-                    detail=(
-                        f"Borrowed points ({data.points}) exceed borrowing limit "
-                        f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
-                    ),
+                raise ValidationError(
+                    "Validation failed",
+                    fields=[{
+                        "field": "points",
+                        "issue": (
+                            f"Borrowed points ({data.points}) exceed borrowing limit "
+                            f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
+                        ),
+                    }],
                 )
 
     balance.points = data.points
@@ -179,7 +185,7 @@ async def delete_point_balance(balance_id: int, db: AsyncSession = Depends(get_d
     result = await db.execute(select(PointBalance).where(PointBalance.id == balance_id))
     balance = result.scalar_one_or_none()
     if not balance:
-        raise HTTPException(status_code=404, detail="Point balance not found")
+        raise NotFoundError("Point balance not found")
 
     await db.delete(balance)
     await db.commit()
@@ -191,7 +197,7 @@ async def get_contract_timeline(contract_id: int, db: AsyncSession = Depends(get
     result = await db.execute(select(Contract).where(Contract.id == contract_id))
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     use_year_month = contract.use_year_month
     current_uy = get_current_use_year(use_year_month)

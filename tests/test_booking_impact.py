@@ -1,7 +1,6 @@
-import pytest
 from datetime import date
-from backend.engine.booking_impact import compute_booking_impact, compute_banking_warning
 
+from backend.engine.booking_impact import compute_banking_warning, compute_booking_impact
 
 # --- compute_booking_impact tests ---
 

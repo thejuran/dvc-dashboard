@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 8 of 10 (Code Hardening)
-Plan: 0 of 5 in current phase
-Status: Planned — ready to execute
-Last activity: 2026-02-11 — Phase 8 planned (5 plans, 2 waves)
+Plan: 3 of 5 in current phase
+Status: Executing
+Last activity: 2026-02-12 — Completed 08-03 (Error Boundaries & Form Validation)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
@@ -27,7 +27,7 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Code Hardening | 0/5 | - | - |
+| 8. Code Hardening | 1/5 | 4min | 4min |
 | 9. UX & Security Polish | 0/TBD | - | - |
 | 10. Open Source & Docs | 0/TBD | - | - |
 
@@ -46,6 +46,9 @@ Key architectural decisions carrying forward:
 - Pure-function engine layer (no DB coupling)
 - Docker single-container: FastAPI serves React build
 - GPL v3 license for open-source release (pending)
+- ApiError class in api.ts for structured field-level error propagation from backend to forms
+- Per-section error boundaries (not app-level) for crash isolation
+- Blur-triggered form validation with inline red text pattern across all form components
 
 ### Pending Todos
 
@@ -57,7 +60,7 @@ None open.
 
 ## Session Continuity
 
-Last session: 2026-02-11
-Stopped at: Phase 8 planned (5 plans, 2 waves, verification passed)
+Last session: 2026-02-12
+Stopped at: Completed 08-03-PLAN.md (Error Boundaries & Form Validation)
 Resume file: None
-Next: /gsd:execute-phase 8
+Next: Execute 08-01, 08-02 (wave 1 remaining), then 08-04, 08-05 (wave 2)

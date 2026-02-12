@@ -1,10 +1,13 @@
-from sqlalchemy import Column, Integer, String, Boolean, Enum as SAEnum, DateTime
-from sqlalchemy.orm import relationship
-from backend.db.database import Base
 import enum
 from datetime import datetime
 
-class PurchaseType(str, enum.Enum):
+from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy.orm import relationship
+
+from backend.db.database import Base
+
+
+class PurchaseType(enum.StrEnum):
     RESALE = "resale"
     DIRECT = "direct"
 

@@ -1,6 +1,10 @@
 """Booking eligibility resolver -- determines which resorts a contract can book."""
 
-from backend.data.resorts import get_resort_slugs, get_original_resort_slugs, get_restricted_resort_slugs
+from backend.data.resorts import (
+    get_original_resort_slugs,
+    get_resort_slugs,
+    get_restricted_resort_slugs,
+)
 
 
 def get_eligible_resorts(home_resort: str, purchase_type: str) -> list[str]:

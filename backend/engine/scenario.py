@@ -1,6 +1,7 @@
 from datetime import date
-from backend.engine.availability import get_contract_availability
+
 from backend.data.point_charts import calculate_stay_cost
+from backend.engine.availability import get_contract_availability
 
 
 def compute_scenario_impact(

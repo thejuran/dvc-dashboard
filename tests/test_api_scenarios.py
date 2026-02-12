@@ -1,6 +1,5 @@
 import pytest
 
-
 VALID_CONTRACT = {
     "home_resort": "polynesian",
     "use_year_month": 6,
@@ -83,7 +82,7 @@ async def test_evaluate_valid_hypothetical(client):
 @pytest.mark.asyncio
 async def test_evaluate_empty_bookings(client):
     """POST /api/scenarios/evaluate with empty list -> 200, zero impact."""
-    cid = await _create_contract_with_balance(client)
+    await _create_contract_with_balance(client)
 
     resp = await client.post("/api/scenarios/evaluate", json={
         "hypothetical_bookings": [],
@@ -113,7 +112,7 @@ async def test_evaluate_ineligible_resort(client):
         }],
     })
     assert resp.status_code == 422
-    assert "not eligible" in resp.json()["detail"].lower()
+    assert "not eligible" in resp.json()["error"]["fields"][0]["issue"].lower()
 
 
 @pytest.mark.asyncio

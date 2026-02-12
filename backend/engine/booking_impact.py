@@ -1,6 +1,7 @@
 from datetime import date
-from backend.engine.availability import get_contract_availability
+
 from backend.data.point_charts import calculate_stay_cost
+from backend.engine.availability import get_contract_availability
 
 
 def compute_booking_impact(
@@ -60,7 +61,7 @@ def compute_booking_impact(
         "status": "confirmed",
         "contract_id": contract["id"],
     }
-    after_reservations = contract_reservations + [proposed_reservation]
+    after_reservations = [*contract_reservations, proposed_reservation]
 
     after = get_contract_availability(
         contract_id=contract["id"],

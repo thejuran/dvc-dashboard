@@ -1,12 +1,13 @@
+from datetime import date as date_type
+from datetime import datetime
+
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
-from datetime import datetime, date as date_type
 
 VALID_USE_YEAR_MONTHS = [2, 3, 4, 6, 8, 9, 10, 12]
 
 
 class ContractCreate(BaseModel):
-    name: Optional[str] = None
+    name: str | None = None
     home_resort: str = Field(..., min_length=1)
     use_year_month: int
     annual_points: int = Field(..., gt=0, le=2000)
@@ -29,11 +30,11 @@ class ContractCreate(BaseModel):
 
 
 class ContractUpdate(BaseModel):
-    name: Optional[str] = None
-    home_resort: Optional[str] = None
-    use_year_month: Optional[int] = None
-    annual_points: Optional[int] = Field(None, gt=0, le=2000)
-    purchase_type: Optional[str] = Field(None, pattern="^(resale|direct)$")
+    name: str | None = None
+    home_resort: str | None = None
+    use_year_month: int | None = None
+    annual_points: int | None = Field(None, gt=0, le=2000)
+    purchase_type: str | None = Field(None, pattern="^(resale|direct)$")
 
     @field_validator("use_year_month")
     @classmethod
@@ -54,7 +55,7 @@ class ContractUpdate(BaseModel):
 
 class ContractResponse(BaseModel):
     id: int
-    name: Optional[str]
+    name: str | None
     home_resort: str
     use_year_month: int
     annual_points: int
@@ -134,8 +135,8 @@ class ReservationCreate(BaseModel):
     check_out: date_type
     points_cost: int = Field(..., gt=0)
     status: str = Field("confirmed", pattern="^(confirmed|pending|cancelled)$")
-    confirmation_number: Optional[str] = None
-    notes: Optional[str] = None
+    confirmation_number: str | None = None
+    notes: str | None = None
 
     @field_validator("resort")
     @classmethod
@@ -157,14 +158,14 @@ class ReservationCreate(BaseModel):
 
 
 class ReservationUpdate(BaseModel):
-    resort: Optional[str] = None
-    room_key: Optional[str] = None
-    check_in: Optional[date_type] = None
-    check_out: Optional[date_type] = None
-    points_cost: Optional[int] = Field(None, gt=0)
-    status: Optional[str] = Field(None, pattern="^(confirmed|pending|cancelled)$")
-    confirmation_number: Optional[str] = None
-    notes: Optional[str] = None
+    resort: str | None = None
+    room_key: str | None = None
+    check_in: date_type | None = None
+    check_out: date_type | None = None
+    points_cost: int | None = Field(None, gt=0)
+    status: str | None = Field(None, pattern="^(confirmed|pending|cancelled)$")
+    confirmation_number: str | None = None
+    notes: str | None = None
 
     @field_validator("resort")
     @classmethod
@@ -185,8 +186,8 @@ class ReservationResponse(BaseModel):
     check_out: date_type
     points_cost: int
     status: str
-    confirmation_number: Optional[str]
-    notes: Optional[str]
+    confirmation_number: str | None
+    notes: str | None
     created_at: datetime
     updated_at: datetime
 

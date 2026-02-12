@@ -1,15 +1,15 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
-from alembic import context
 
 # this is the Alembic Config object
 config = context.config
 
 import os
+
 _db_url = os.environ.get("DATABASE_URL")
 if _db_url:
     config.set_main_option("sqlalchemy.url", _db_url)
@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 
 # Import models so autogenerate detects them
 from backend.db.database import Base
-from backend.models import Contract, PointBalance, Reservation, AppSetting  # noqa: F401
+from backend.models import AppSetting, Contract, PointBalance, Reservation  # noqa: F401
 
 target_metadata = Base.metadata
 

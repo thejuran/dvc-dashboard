@@ -1,6 +1,5 @@
 import pytest
 
-
 VALID_CONTRACT = {
     "home_resort": "polynesian",
     "use_year_month": 6,
@@ -69,7 +68,7 @@ async def test_create_reservation_ineligible_resort(client):
     cid = await _create_contract(client)
     resp = await _create_reservation(client, cid, resort="riviera")
     assert resp.status_code == 422
-    assert "not eligible" in resp.json()["detail"].lower()
+    assert "not eligible" in resp.json()["error"]["fields"][0]["issue"].lower()
 
 
 @pytest.mark.asyncio
@@ -319,7 +318,7 @@ async def test_preview_no_point_chart(client):
         "check_out": "2026-01-15",
     })
     assert resp.status_code == 422
-    assert "point chart" in resp.json()["detail"].lower()
+    assert "point chart" in resp.json()["error"]["message"].lower()
 
 
 @pytest.mark.asyncio

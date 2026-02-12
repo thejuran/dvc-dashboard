@@ -1,11 +1,13 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from backend.db.database import Base
 import enum
 from datetime import datetime
 
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 
-class ReservationStatus(str, enum.Enum):
+from backend.db.database import Base
+
+
+class ReservationStatus(enum.StrEnum):
     CONFIRMED = "confirmed"
     PENDING = "pending"
     CANCELLED = "cancelled"

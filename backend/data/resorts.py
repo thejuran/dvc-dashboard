@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 from functools import lru_cache
+from pathlib import Path
 
 RESORTS_FILE = Path(__file__).parent.parent.parent / "data" / "resorts.json"
 

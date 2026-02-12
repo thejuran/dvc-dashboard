@@ -1,6 +1,5 @@
 import pytest
 
-
 POLY_CONTRACT = {
     "home_resort": "polynesian",
     "use_year_month": 6,

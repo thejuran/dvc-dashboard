@@ -1,9 +1,9 @@
-from backend.engine.eligibility import get_eligible_resorts
 from backend.data.resorts import (
-    get_resort_slugs,
     get_original_resort_slugs,
+    get_resort_slugs,
     get_restricted_resort_slugs,
 )
+from backend.engine.eligibility import get_eligible_resorts
 
 
 def test_direct_purchase_gets_all_resorts():

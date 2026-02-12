@@ -1,8 +1,7 @@
-import pytest
 from datetime import date
 from unittest.mock import patch
-from backend.engine.booking_windows import _dvc_subtract_months, compute_booking_windows
 
+from backend.engine.booking_windows import _dvc_subtract_months, compute_booking_windows
 
 # --- _dvc_subtract_months edge cases ---
 

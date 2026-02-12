@@ -1,7 +1,6 @@
-import pytest
 from datetime import date, timedelta
-from unittest.mock import patch
 
+import pytest
 
 VALID_CONTRACT = {
     "home_resort": "polynesian",

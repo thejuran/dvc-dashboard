@@ -1,26 +1,26 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.errors import NotFoundError, ValidationError
+from backend.api.schemas import (
+    AvailabilitySnapshot,
+    BookingWindowInfo,
+    ReservationCreate,
+    ReservationPreviewRequest,
+    ReservationPreviewResponse,
+    ReservationResponse,
+    ReservationUpdate,
+)
 from backend.db.database import get_db
+from backend.engine.booking_impact import compute_banking_warning, compute_booking_impact
+from backend.engine.booking_windows import compute_booking_windows
+from backend.engine.eligibility import get_eligible_resorts
 from backend.models.contract import Contract
 from backend.models.point_balance import PointBalance
 from backend.models.reservation import Reservation
-from backend.api.schemas import (
-    ReservationCreate,
-    ReservationUpdate,
-    ReservationResponse,
-    ReservationPreviewRequest,
-    ReservationPreviewResponse,
-    AvailabilitySnapshot,
-    BookingWindowInfo,
-)
-from backend.engine.eligibility import get_eligible_resorts
-from backend.engine.booking_impact import compute_booking_impact, compute_banking_warning
-from backend.engine.booking_windows import compute_booking_windows
 
 router = APIRouter(tags=["reservations"])
 
@@ -57,7 +57,7 @@ async def list_contract_reservations(
     """List reservations for a specific contract."""
     result = await db.execute(select(Contract).where(Contract.id == contract_id))
     if not result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     result = await db.execute(
         select(Reservation)
@@ -80,7 +80,7 @@ async def preview_reservation(
     result = await db.execute(select(Contract).where(Contract.id == data.contract_id))
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     # 2. Load all point balances for this contract
     result = await db.execute(
@@ -138,7 +138,7 @@ async def preview_reservation(
 
     # 6. If error (no point chart), return 422
     if "error" in impact:
-        raise HTTPException(status_code=422, detail=impact["error"])
+        raise ValidationError(impact["error"])
 
     # 7. Compute banking warning
     banking_warning = compute_banking_warning(
@@ -182,7 +182,7 @@ async def get_reservation(reservation_id: int, db: AsyncSession = Depends(get_db
     )
     reservation = result.scalar_one_or_none()
     if not reservation:
-        raise HTTPException(status_code=404, detail="Reservation not found")
+        raise NotFoundError("Reservation not found")
     return reservation
 
 
@@ -198,14 +198,17 @@ async def create_reservation(
     result = await db.execute(select(Contract).where(Contract.id == contract_id))
     contract = result.scalar_one_or_none()
     if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+        raise NotFoundError("Contract not found")
 
     # Validate resort eligibility
     eligible = get_eligible_resorts(contract.home_resort, contract.purchase_type)
     if data.resort not in eligible:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Resort '{data.resort}' is not eligible for this {contract.purchase_type} contract at {contract.home_resort}. Eligible resorts: {eligible}",
+        raise ValidationError(
+            "Validation failed",
+            fields=[{
+                "field": "resort",
+                "issue": f"Resort '{data.resort}' is not eligible for this {contract.purchase_type} contract at {contract.home_resort}. Eligible resorts: {eligible}",
+            }],
         )
 
     reservation = Reservation(
@@ -235,7 +238,7 @@ async def update_reservation(
     )
     reservation = result.scalar_one_or_none()
     if not reservation:
-        raise HTTPException(status_code=404, detail="Reservation not found")
+        raise NotFoundError("Reservation not found")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -258,7 +261,7 @@ async def delete_reservation(
     )
     reservation = result.scalar_one_or_none()
     if not reservation:
-        raise HTTPException(status_code=404, detail="Reservation not found")
+        raise NotFoundError("Reservation not found")
 
     await db.delete(reservation)
     await db.commit()

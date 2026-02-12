@@ -1,12 +1,13 @@
-import pytest
 from datetime import date
+
+import pytest
+
 from backend.engine.use_year import (
-    get_current_use_year,
-    get_use_year_status,
     build_use_year_timeline,
     get_banking_deadline,
+    get_current_use_year,
+    get_use_year_status,
 )
-
 
 VALID_CONTRACT = {
     "home_resort": "polynesian",
