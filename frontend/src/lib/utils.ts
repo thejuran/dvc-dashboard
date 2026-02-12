@@ -66,3 +66,14 @@ export function nightsBetween(checkIn: string, checkOut: string): number {
   const co = new Date(checkOut);
   return Math.round((co.getTime() - ci.getTime()) / (1000 * 60 * 60 * 24));
 }
+
+/** Map a point value to a heat-map background class (green=low, yellow=mid, red=high). */
+export function heatColor(value: number, min: number, max: number): string {
+  if (max === min) return "bg-green-100 dark:bg-green-900/30";
+  const ratio = (value - min) / (max - min);
+  if (ratio < 0.2) return "bg-green-100 dark:bg-green-900/30";
+  if (ratio < 0.4) return "bg-lime-100 dark:bg-lime-900/30";
+  if (ratio < 0.6) return "bg-yellow-100 dark:bg-yellow-900/30";
+  if (ratio < 0.8) return "bg-orange-100 dark:bg-orange-900/30";
+  return "bg-red-100 dark:bg-red-900/30";
+}
