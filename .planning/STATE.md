@@ -5,31 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** v1.1 milestone complete -- planning next milestone
+**Current focus:** v1.2 Harden & Open Source -- defining requirements
 
 ## Current Position
 
-Milestone: v1.1 Share & Plan -- SHIPPED
-All phases complete (4-7), all 9 plans executed
-Last activity: 2026-02-11 -- v1.1 milestone archived
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-11 — Milestone v1.2 started
 
-Progress: [██████████] 100%
-
-## Performance Metrics
-
-**Velocity (v1.1):**
-- Total plans completed: 9
-- Average duration: 3m 26s
-- Total execution time: 31m 0s
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 4     | 2     | 9m 48s | 4m 54s |
-| 5     | 3     | 11m 6s | 3m 42s  |
-| 6     | 3     | 8m 18s | 2m 46s  |
-| 7     | 1     | 1m 48s | 1m 48s  |
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -57,6 +42,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: v1.1 milestone completed and archived
+Stopped at: Defining v1.2 requirements
 Resume file: None
-Next: /gsd:new-milestone for next version
+Next: Complete requirements and roadmap definition

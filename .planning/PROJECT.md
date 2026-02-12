@@ -8,6 +8,18 @@ A personal web application for managing Disney Vacation Club points across multi
 
 For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book -- accounting for banking, borrowing, existing reservations, and resale restrictions.
 
+## Current Milestone: v1.2 Harden & Open Source
+
+**Goal:** Harden code quality, security, and UX polish, then publish as a GPL v3 open-source project on GitHub.
+
+**Target features:**
+- Full test coverage, error handling, edge case hardening, input validation
+- Security audit: no credential leaks, sanitized inputs, audited dependencies
+- UX polish: loading states, error messages, mobile responsiveness, rough edges
+- New public GitHub repo (`dvc-dashboard`), GPL v3 license, README with screenshots
+- CI/CD pipeline: GitHub Actions for tests, linting, Docker build verification
+- Documentation: setup guide, architecture docs, API reference, contributing guide
+
 ## Current State
 
 **Shipped:** v1.1 (2026-02-11)
@@ -80,6 +92,7 @@ v1.1 adds Docker packaging and trip planning tools on top of v1.0's foundation:
 - The official DVC website doesn't provide cross-contract planning views
 - v1 replaced spreadsheet-based tracking with proper web app
 - v1.1 made it shareable and added planning intelligence
+- v1.2 hardens for public release as open-source tool on GitHub
 
 ## Constraints
 
@@ -108,5 +121,8 @@ v1.1 adds Docker packaging and trip planning tools on top of v1.0's foundation:
 | Client-side heatmap computation | No new API endpoint needed; useMemo from existing chart data | ✓ Good |
 | Shared heatColor utility | Code reuse between PointChartTable and CostHeatmap | ✓ Good |
 
+| GPL v3 license | Copyleft keeps project from being closed-sourced by forks | — Pending |
+| New repo `dvc-dashboard` | Clean public identity, separate from private dev repo | — Pending |
+
 ---
-*Last updated: 2026-02-11 after v1.1 milestone*
+*Last updated: 2026-02-11 after v1.2 milestone started*
