@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 10 - Open Source & Documentation (v1.2)
+**Current focus:** Phase 10 - Open Source & Documentation (v1.2) -- COMPLETE
 
 ## Current Position
 
 Phase: 10 of 10 (Open Source & Documentation)
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-02-12 — Completed 10-02 (CI pipeline)
+Plan: 3 of 3 in current phase (all plans complete)
+Status: Phase complete
+Last activity: 2026-02-12 — Completed 10-03 (technical documentation)
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26 (across v1.0 + v1.1 + v1.2 phases 8-9)
+- Total plans completed: 29 (across v1.0 + v1.1 + v1.2 phases 8-10)
 - Average duration: carried from prior milestones
 - Total execution time: carried from prior milestones
 
@@ -29,7 +29,7 @@ Progress: [█████████░] 90%
 |-------|-------|-------|----------|
 | 8. Code Hardening | 5/5 | 36min | 7.2min |
 | 9. UX & Security Polish | 3/3 | 14min | 4.7min |
-| 10. Open Source & Docs | 1/3 | 3min | 3min |
+| 10. Open Source & Docs | 3/3 | 11min | 3.7min |
 
 *Updated after each plan completion*
 
@@ -44,6 +44,9 @@ Phase 10 decisions:
 - 4 parallel CI jobs (backend-test, backend-lint, frontend-lint, docker-build) for fast PR feedback
 - No pip/npm caching in CI -- simplicity over speed for now
 - CI requires no repository secrets or special permissions
+- Docs in docs/ directory (setup.md, architecture.md, api-reference.md) for version control
+- API reference documents all 31 endpoints with actual schema field names from source
+- Architecture uses ASCII diagram for broad compatibility
 
 Key architectural decisions carrying forward:
 - Monorepo: FastAPI backend + React/Vite frontend
@@ -83,6 +86,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 10-02-PLAN.md (CI pipeline)
+Stopped at: Phase 10 complete (3/3 plans), milestone v1.2 complete
 Resume file: None
-Next: Execute 10-03-PLAN.md (remaining plan)
+Next: /gsd:new-milestone for v2.0 or v1.3
