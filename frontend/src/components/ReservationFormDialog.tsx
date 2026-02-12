@@ -110,6 +110,7 @@ export default function ReservationFormDialog({
 
   const calculateCost = useCalculateStayCost();
 
+  // Sync form state from props when dialog opens
   useEffect(() => {
     if (editReservation) {
       setContractId(String(editReservation.contract_id));
@@ -144,6 +145,7 @@ export default function ReservationFormDialog({
     }
   }, [contractId, isEditing]);
 
+  // Reset room when resort changes
   useEffect(() => {
     if (!isEditing) {
       setRoomKey("");

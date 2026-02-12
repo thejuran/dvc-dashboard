@@ -72,6 +72,7 @@ export default function ContractFormDialog({
 
   const isEditing = !!editContract;
 
+  // Sync form state from props when dialog opens
   useEffect(() => {
     if (editContract) {
       setName(editContract.name || "");

@@ -69,7 +69,7 @@ export default function PointChartsPage() {
     }
   }, [charts, selectedResort]);
 
-  // When resort changes, auto-select first year
+  // When resort changes, auto-select first available year
   useEffect(() => {
     if (availableYears.length > 0 && !availableYears.includes(Number(selectedYear))) {
       setSelectedYear(String(availableYears[0]));
