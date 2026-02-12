@@ -8,10 +8,11 @@ from backend.db.database import Base
 
 
 class PointAllocationType(enum.StrEnum):
-    CURRENT = "current"       # current use year allocation
-    BANKED = "banked"         # banked from prior use year
-    BORROWED = "borrowed"     # borrowed from next use year
-    HOLDING = "holding"       # holding account (late cancellation, etc.)
+    CURRENT = "current"  # current use year allocation
+    BANKED = "banked"  # banked from prior use year
+    BORROWED = "borrowed"  # borrowed from next use year
+    HOLDING = "holding"  # holding account (late cancellation, etc.)
+
 
 class PointBalance(Base):
     __tablename__ = "point_balances"

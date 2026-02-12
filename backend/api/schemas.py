@@ -46,6 +46,7 @@ class ContractCreate(BaseModel):
     @classmethod
     def validate_home_resort(cls, v):
         from backend.data.resorts import get_resort_slugs
+
         if v not in get_resort_slugs():
             raise ValueError(f"Invalid resort slug. Must be one of: {get_resort_slugs()}")
         return v
@@ -85,6 +86,7 @@ class ContractUpdate(BaseModel):
     def validate_home_resort(cls, v):
         if v is not None:
             from backend.data.resorts import get_resort_slugs
+
             if v not in get_resort_slugs():
                 raise ValueError("Invalid resort slug.")
         return v
@@ -132,6 +134,7 @@ class ContractWithDetails(ContractResponse):
 
 # Point Chart schemas
 
+
 class PointChartSummary(BaseModel):
     resort: str
     year: int
@@ -154,8 +157,8 @@ class PointCostRequest(BaseModel):
     def validate_date_format(cls, v):
         try:
             date_type.fromisoformat(v)
-        except (ValueError, TypeError):
-            raise ValueError("Invalid date format. Use ISO format (YYYY-MM-DD).")
+        except (ValueError, TypeError) as err:
+            raise ValueError("Invalid date format. Use ISO format (YYYY-MM-DD).") from err
         return v
 
 
@@ -178,6 +181,7 @@ class StayCostResponse(BaseModel):
 
 
 # Reservation schemas
+
 
 class ReservationCreate(BaseModel):
     resort: str = Field(..., min_length=1)
@@ -214,6 +218,7 @@ class ReservationCreate(BaseModel):
     @classmethod
     def validate_resort(cls, v):
         from backend.data.resorts import get_resort_slugs
+
         if v not in get_resort_slugs():
             raise ValueError("Invalid resort slug.")
         return v
@@ -265,6 +270,7 @@ class ReservationUpdate(BaseModel):
     def validate_resort(cls, v):
         if v is not None:
             from backend.data.resorts import get_resort_slugs
+
             if v not in get_resort_slugs():
                 raise ValueError("Invalid resort slug.")
         return v
@@ -288,6 +294,7 @@ class ReservationResponse(BaseModel):
 
 
 # Availability schemas
+
 
 class AvailabilityContractResult(BaseModel):
     contract_id: int
@@ -324,6 +331,7 @@ class AvailabilityResponse(BaseModel):
 
 # Trip Explorer schemas
 
+
 class TripExplorerOption(BaseModel):
     contract_id: int
     contract_name: str
@@ -348,6 +356,7 @@ class TripExplorerResponse(BaseModel):
 
 
 # Reservation Preview schemas
+
 
 class ReservationPreviewRequest(BaseModel):
     contract_id: int
@@ -410,6 +419,7 @@ class ReservationPreviewResponse(BaseModel):
 
 # App Settings schemas
 
+
 class AppSettingResponse(BaseModel):
     key: str
     value: str
@@ -428,6 +438,7 @@ class AppSettingUpdate(BaseModel):
 
 # Booking Window Alert schemas
 
+
 class BookingWindowAlert(BaseModel):
     contract_name: str
     resort: str
@@ -439,6 +450,7 @@ class BookingWindowAlert(BaseModel):
 
 
 # Scenario Evaluation schemas
+
 
 class HypotheticalBooking(BaseModel):
     contract_id: int

@@ -78,9 +78,7 @@ async def test_create_reservation_ineligible_resort(client):
 async def test_create_reservation_checkout_before_checkin(client):
     """POST reservation with check_out before check_in -> 422 with structured error."""
     cid = await _create_contract(client)
-    resp = await _create_reservation(
-        client, cid, check_in="2026-03-20", check_out="2026-03-15"
-    )
+    resp = await _create_reservation(client, cid, check_in="2026-03-20", check_out="2026-03-15")
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
@@ -91,9 +89,7 @@ async def test_create_reservation_checkout_before_checkin(client):
 async def test_create_reservation_exceeds_14_nights(client):
     """POST reservation exceeding 14 nights -> 422 with structured error."""
     cid = await _create_contract(client)
-    resp = await _create_reservation(
-        client, cid, check_in="2026-03-01", check_out="2026-03-20"
-    )
+    resp = await _create_reservation(client, cid, check_in="2026-03-01", check_out="2026-03-20")
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
@@ -105,7 +101,9 @@ async def test_list_all_reservations(client):
     """GET /api/reservations -> returns list."""
     cid = await _create_contract(client)
     await _create_reservation(client, cid)
-    await _create_reservation(client, cid, check_in="2026-04-10", check_out="2026-04-15", points_cost=90)
+    await _create_reservation(
+        client, cid, check_in="2026-04-10", check_out="2026-04-15", points_cost=90
+    )
 
     resp = await client.get("/api/reservations")
     assert resp.status_code == 200
@@ -265,13 +263,16 @@ async def test_preview_valid_contract(client):
 
     # Use dates in Jan 2026, Adventure season for polynesian
     # deluxe_studio_standard weekday=14, weekend=19
-    resp = await client.post("/api/reservations/preview", json={
-        "contract_id": cid,
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-12",  # Monday
-        "check_out": "2026-01-15",  # Thursday -> 3 weekday nights
-    })
+    resp = await client.post(
+        "/api/reservations/preview",
+        json={
+            "contract_id": cid,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-12",  # Monday
+            "check_out": "2026-01-15",  # Thursday -> 3 weekday nights
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
 
@@ -305,13 +306,16 @@ async def test_preview_valid_contract(client):
 @pytest.mark.asyncio
 async def test_preview_invalid_contract(client):
     """POST /api/reservations/preview with invalid contract_id -> 404."""
-    resp = await client.post("/api/reservations/preview", json={
-        "contract_id": 999,
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-12",
-        "check_out": "2026-01-15",
-    })
+    resp = await client.post(
+        "/api/reservations/preview",
+        json={
+            "contract_id": 999,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-12",
+            "check_out": "2026-01-15",
+        },
+    )
     assert resp.status_code == 404
     body = resp.json()
     assert body["error"]["type"] == "NOT_FOUND"
@@ -325,13 +329,16 @@ async def test_preview_no_point_chart(client):
         client, home_resort="bay_lake_tower", purchase_type="direct"
     )
 
-    resp = await client.post("/api/reservations/preview", json={
-        "contract_id": cid,
-        "resort": "bay_lake_tower",
-        "room_key": "deluxe_studio",
-        "check_in": "2026-01-12",
-        "check_out": "2026-01-15",
-    })
+    resp = await client.post(
+        "/api/reservations/preview",
+        json={
+            "contract_id": cid,
+            "resort": "bay_lake_tower",
+            "room_key": "deluxe_studio",
+            "check_in": "2026-01-12",
+            "check_out": "2026-01-15",
+        },
+    )
     assert resp.status_code == 422
     assert "point chart" in resp.json()["error"]["message"].lower()
 
@@ -341,13 +348,16 @@ async def test_preview_nightly_breakdown_count(client):
     """Preview nightly_breakdown has correct number of nights."""
     cid = await _create_contract_with_balance(client)
 
-    resp = await client.post("/api/reservations/preview", json={
-        "contract_id": cid,
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-12",
-        "check_out": "2026-01-16",  # 4 nights
-    })
+    resp = await client.post(
+        "/api/reservations/preview",
+        json={
+            "contract_id": cid,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-12",
+            "check_out": "2026-01-16",  # 4 nights
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert len(data["nightly_breakdown"]) == 4
@@ -359,13 +369,16 @@ async def test_preview_booking_windows_fields(client):
     """Preview booking_windows has all expected fields with correct types."""
     cid = await _create_contract_with_balance(client)
 
-    resp = await client.post("/api/reservations/preview", json={
-        "contract_id": cid,
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-12",
-        "check_out": "2026-01-15",
-    })
+    resp = await client.post(
+        "/api/reservations/preview",
+        json={
+            "contract_id": cid,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-12",
+            "check_out": "2026-01-15",
+        },
+    )
     assert resp.status_code == 200
     bw = resp.json()["booking_windows"]
 
@@ -397,13 +410,16 @@ async def test_create_reservation_ineligible_resort_structured(client):
 @pytest.mark.asyncio
 async def test_preview_nonexistent_contract(client):
     """POST /api/reservations/preview with non-existent contract_id -> 404."""
-    resp = await client.post("/api/reservations/preview", json={
-        "contract_id": 99999,
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-03-15",
-        "check_out": "2026-03-18",
-    })
+    resp = await client.post(
+        "/api/reservations/preview",
+        json={
+            "contract_id": 99999,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-03-15",
+            "check_out": "2026-03-18",
+        },
+    )
     assert resp.status_code == 404
     body = resp.json()
     assert body["error"]["type"] == "NOT_FOUND"

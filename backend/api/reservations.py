@@ -51,9 +51,7 @@ async def list_reservations(
     "/api/contracts/{contract_id}/reservations",
     response_model=list[ReservationResponse],
 )
-async def list_contract_reservations(
-    contract_id: int, db: AsyncSession = Depends(get_db)
-):
+async def list_contract_reservations(contract_id: int, db: AsyncSession = Depends(get_db)):
     """List reservations for a specific contract."""
     result = await db.execute(select(Contract).where(Contract.id == contract_id))
     if not result.scalar_one_or_none():
@@ -177,9 +175,7 @@ async def preview_reservation(
 @router.get("/api/reservations/{reservation_id}", response_model=ReservationResponse)
 async def get_reservation(reservation_id: int, db: AsyncSession = Depends(get_db)):
     """Get a single reservation."""
-    result = await db.execute(
-        select(Reservation).where(Reservation.id == reservation_id)
-    )
+    result = await db.execute(select(Reservation).where(Reservation.id == reservation_id))
     reservation = result.scalar_one_or_none()
     if not reservation:
         raise NotFoundError("Reservation not found")
@@ -205,10 +201,12 @@ async def create_reservation(
     if data.resort not in eligible:
         raise ValidationError(
             "Validation failed",
-            fields=[{
-                "field": "resort",
-                "issue": f"Resort '{data.resort}' is not eligible for this {contract.purchase_type} contract at {contract.home_resort}. Eligible resorts: {eligible}",
-            }],
+            fields=[
+                {
+                    "field": "resort",
+                    "issue": f"Resort '{data.resort}' is not eligible for this {contract.purchase_type} contract at {contract.home_resort}. Eligible resorts: {eligible}",
+                }
+            ],
         )
 
     reservation = Reservation(
@@ -233,9 +231,7 @@ async def update_reservation(
     reservation_id: int, data: ReservationUpdate, db: AsyncSession = Depends(get_db)
 ):
     """Update a reservation (partial update)."""
-    result = await db.execute(
-        select(Reservation).where(Reservation.id == reservation_id)
-    )
+    result = await db.execute(select(Reservation).where(Reservation.id == reservation_id))
     reservation = result.scalar_one_or_none()
     if not reservation:
         raise NotFoundError("Reservation not found")
@@ -249,16 +245,10 @@ async def update_reservation(
     return reservation
 
 
-@router.delete(
-    "/api/reservations/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT
-)
-async def delete_reservation(
-    reservation_id: int, db: AsyncSession = Depends(get_db)
-):
+@router.delete("/api/reservations/{reservation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_reservation(reservation_id: int, db: AsyncSession = Depends(get_db)):
     """Delete a reservation."""
-    result = await db.execute(
-        select(Reservation).where(Reservation.id == reservation_id)
-    )
+    result = await db.execute(select(Reservation).where(Reservation.id == reservation_id))
     reservation = result.scalar_one_or_none()
     if not reservation:
         raise NotFoundError("Reservation not found")

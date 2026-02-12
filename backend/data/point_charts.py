@@ -64,7 +64,9 @@ def get_point_cost(chart: dict, room_key: str, target_date: date) -> int | None:
     return room["weekend"] if is_weekend else room["weekday"]
 
 
-def calculate_stay_cost(resort_slug: str, room_key: str, check_in: date, check_out: date) -> dict | None:
+def calculate_stay_cost(
+    resort_slug: str, room_key: str, check_in: date, check_out: date
+) -> dict | None:
     """Calculate total point cost for a stay.
 
     Returns dict with per-night breakdown and total, or None if chart not found.
@@ -88,13 +90,15 @@ def calculate_stay_cost(resort_slug: str, room_key: str, check_in: date, check_o
             return None  # missing data
 
         season = get_season_for_date(current_chart, current)
-        nights.append({
-            "date": current.isoformat(),
-            "day_of_week": current.strftime("%A"),
-            "season": season["name"] if season else "Unknown",
-            "is_weekend": current.weekday() in (4, 5),
-            "points": cost
-        })
+        nights.append(
+            {
+                "date": current.isoformat(),
+                "day_of_week": current.strftime("%A"),
+                "season": season["name"] if season else "Unknown",
+                "is_weekend": current.weekday() in (4, 5),
+                "points": cost,
+            }
+        )
         total += cost
         current += timedelta(days=1)
 
@@ -105,5 +109,5 @@ def calculate_stay_cost(resort_slug: str, room_key: str, check_in: date, check_o
         "check_out": check_out.isoformat(),
         "num_nights": len(nights),
         "total_points": total,
-        "nightly_breakdown": nights
+        "nightly_breakdown": nights,
     }

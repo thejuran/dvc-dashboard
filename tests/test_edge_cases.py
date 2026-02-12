@@ -8,17 +8,24 @@ Pure-function tests (no DB, no async) covering:
 
 from datetime import date
 
-from backend.engine.availability import get_all_contracts_availability, get_contract_availability
+from backend.engine.availability import (
+    get_all_contracts_availability,
+    get_contract_availability,
+)
 from backend.engine.booking_impact import compute_booking_impact
 from backend.engine.scenario import compute_scenario_impact
 from backend.engine.trip_explorer import find_affordable_options
 
-
 # ---- Fixtures ----
 
+
 def _contract(
-    id=1, use_year_month=6, annual_points=160, home_resort="polynesian",
-    purchase_type="resale", name="Poly",
+    id=1,
+    use_year_month=6,
+    annual_points=160,
+    home_resort="polynesian",
+    purchase_type="resale",
+    name="Poly",
 ):
     return {
         "id": id,
@@ -47,7 +54,10 @@ def _balance(contract_id=1, use_year=2025, allocation_type="current", points=160
 def test_availability_zero_contracts():
     """get_all_contracts_availability with empty contracts list -> summary all zeros."""
     result = get_all_contracts_availability(
-        contracts=[], point_balances=[], reservations=[], target_date=date(2026, 3, 15),
+        contracts=[],
+        point_balances=[],
+        reservations=[],
+        target_date=date(2026, 3, 15),
     )
     assert result["contracts"] == []
     assert result["summary"]["total_contracts"] == 0
@@ -74,8 +84,11 @@ def test_availability_zero_points():
 def test_scenario_zero_contracts():
     """compute_scenario_impact with empty contracts -> empty results."""
     result = compute_scenario_impact(
-        contracts=[], point_balances=[], reservations=[],
-        hypothetical_bookings=[], target_date=date(2026, 3, 15),
+        contracts=[],
+        point_balances=[],
+        reservations=[],
+        hypothetical_bookings=[],
+        target_date=date(2026, 3, 15),
     )
     assert result["contracts"] == []
     assert result["summary"]["total_impact"] == 0
@@ -87,8 +100,11 @@ def test_scenario_zero_contracts():
 def test_trip_explorer_zero_contracts():
     """find_affordable_options with empty contracts -> empty options."""
     result = find_affordable_options(
-        contracts=[], point_balances=[], reservations=[],
-        check_in=date(2026, 1, 12), check_out=date(2026, 1, 15),
+        contracts=[],
+        point_balances=[],
+        reservations=[],
+        check_in=date(2026, 1, 12),
+        check_out=date(2026, 1, 15),
     )
     assert result["options"] == []
     assert result["total_options"] == 0

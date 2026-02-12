@@ -48,9 +48,7 @@ async def trip_explorer(
     all_balances = result.scalars().all()
 
     # Load all non-cancelled reservations
-    result = await db.execute(
-        select(Reservation).where(Reservation.status != "cancelled")
-    )
+    result = await db.execute(select(Reservation).where(Reservation.status != "cancelled"))
     all_reservations = result.scalars().all()
 
     # Convert ORM objects to dicts for the pure-function engine

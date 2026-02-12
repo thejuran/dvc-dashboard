@@ -11,6 +11,7 @@ class PurchaseType(enum.StrEnum):
     RESALE = "resale"
     DIRECT = "direct"
 
+
 class UseYearMonth(int, enum.Enum):
     FEBRUARY = 2
     MARCH = 3
@@ -20,6 +21,7 @@ class UseYearMonth(int, enum.Enum):
     SEPTEMBER = 9
     OCTOBER = 10
     DECEMBER = 12
+
 
 class Contract(Base):
     __tablename__ = "contracts"
@@ -33,5 +35,9 @@ class Contract(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    point_balances = relationship("PointBalance", back_populates="contract", cascade="all, delete-orphan")
-    reservations = relationship("Reservation", back_populates="contract", cascade="all, delete-orphan")
+    point_balances = relationship(
+        "PointBalance", back_populates="contract", cascade="all, delete-orphan"
+    )
+    reservations = relationship(
+        "Reservation", back_populates="contract", cascade="all, delete-orphan"
+    )

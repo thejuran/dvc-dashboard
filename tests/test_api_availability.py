@@ -162,8 +162,12 @@ async def test_multiple_reservations_same_uy(client):
     """Multiple reservations in same UY -> all deducted."""
     cid = await _create_contract(client, POLY_CONTRACT)
     await _add_points(client, cid, 2025, "current", 160)
-    await _create_reservation(client, cid, points_cost=50, check_in="2026-01-10", check_out="2026-01-15")
-    await _create_reservation(client, cid, points_cost=40, check_in="2026-03-15", check_out="2026-03-20")
+    await _create_reservation(
+        client, cid, points_cost=50, check_in="2026-01-10", check_out="2026-01-15"
+    )
+    await _create_reservation(
+        client, cid, points_cost=40, check_in="2026-03-15", check_out="2026-03-20"
+    )
 
     resp = await client.get("/api/availability?target_date=2026-03-15")
     c = resp.json()["contracts"][0]
@@ -189,8 +193,12 @@ async def test_full_e2e_scenario(client):
     # Add reservations
     await _create_reservation(client, cid1, points_cost=85)
     await _create_reservation(
-        client, cid2, resort="riviera", points_cost=100,
-        check_in="2026-01-10", check_out="2026-01-15",
+        client,
+        cid2,
+        resort="riviera",
+        points_cost=100,
+        check_in="2026-01-10",
+        check_out="2026-01-15",
     )
 
     # Query availability

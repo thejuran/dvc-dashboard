@@ -46,8 +46,10 @@ def compute_booking_impact(
 
     # Calculate stay cost (nightly breakdown)
     stay_cost = calculate_stay_cost(
-        proposed_resort, proposed_room_key,
-        proposed_check_in, proposed_check_out,
+        proposed_resort,
+        proposed_room_key,
+        proposed_check_in,
+        proposed_check_out,
     )
     if stay_cost is None:
         return {

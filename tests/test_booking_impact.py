@@ -95,7 +95,12 @@ def test_booking_impact_filters_by_contract():
         {"contract_id": 2, "use_year": 2025, "allocation_type": "current", "points": 300},
     ]
     reservations = [
-        {"contract_id": 2, "check_in": date(2025, 5, 10), "points_cost": 100, "status": "confirmed"},
+        {
+            "contract_id": 2,
+            "check_in": date(2025, 5, 10),
+            "points_cost": 100,
+            "status": "confirmed",
+        },
     ]
 
     result = compute_booking_impact(

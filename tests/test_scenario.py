@@ -5,6 +5,7 @@ from backend.engine.scenario import compute_scenario_impact
 # Test fixtures mirroring test_booking_impact.py patterns.
 # Uses polynesian/deluxe_studio_standard for Jan 2026 (Adventure season: weekday=14, weekend=19).
 
+
 def _make_contract(id=1, use_year_month=2, annual_points=200, home_resort="polynesian", name=None):
     return {
         "id": id,
@@ -29,15 +30,19 @@ def test_single_hypothetical_booking():
     contracts = [_make_contract()]
     balances = [_make_balance()]
     reservations = []
-    hypotheticals = [{
-        "contract_id": 1,
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": date(2026, 1, 12),   # Monday
-        "check_out": date(2026, 1, 15),   # Thursday -> 3 weekday nights = 3*14 = 42 pts
-    }]
+    hypotheticals = [
+        {
+            "contract_id": 1,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": date(2026, 1, 12),  # Monday
+            "check_out": date(2026, 1, 15),  # Thursday -> 3 weekday nights = 3*14 = 42 pts
+        }
+    ]
 
-    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+    result = compute_scenario_impact(
+        contracts, balances, reservations, hypotheticals, date(2026, 1, 1)
+    )
 
     assert result["target_date"] == "2026-01-01"
     assert len(result["contracts"]) == 1
@@ -67,18 +72,20 @@ def test_multiple_bookings_same_contract_cumulative():
             "resort": "polynesian",
             "room_key": "deluxe_studio_standard",
             "check_in": date(2026, 1, 12),
-            "check_out": date(2026, 1, 15),   # 3 weekday nights = 42 pts
+            "check_out": date(2026, 1, 15),  # 3 weekday nights = 42 pts
         },
         {
             "contract_id": 1,
             "resort": "polynesian",
             "room_key": "deluxe_studio_standard",
-            "check_in": date(2026, 1, 19),   # Monday
-            "check_out": date(2026, 1, 22),   # Thursday -> 3 weekday nights = 42 pts
+            "check_in": date(2026, 1, 19),  # Monday
+            "check_out": date(2026, 1, 22),  # Thursday -> 3 weekday nights = 42 pts
         },
     ]
 
-    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+    result = compute_scenario_impact(
+        contracts, balances, reservations, hypotheticals, date(2026, 1, 1)
+    )
 
     # Both bookings resolved
     assert len(result["resolved_bookings"]) == 2
@@ -109,18 +116,20 @@ def test_bookings_across_different_contracts():
             "resort": "polynesian",
             "room_key": "deluxe_studio_standard",
             "check_in": date(2026, 1, 12),
-            "check_out": date(2026, 1, 15),   # 42 pts
+            "check_out": date(2026, 1, 15),  # 42 pts
         },
         {
             "contract_id": 2,
             "resort": "polynesian",
             "room_key": "deluxe_studio_standard",
             "check_in": date(2026, 1, 19),
-            "check_out": date(2026, 1, 22),   # 42 pts
+            "check_out": date(2026, 1, 22),  # 42 pts
         },
     ]
 
-    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+    result = compute_scenario_impact(
+        contracts, balances, reservations, hypotheticals, date(2026, 1, 1)
+    )
 
     assert len(result["contracts"]) == 2
 
@@ -160,11 +169,13 @@ def test_invalid_booking_goes_to_errors():
             "resort": "polynesian",
             "room_key": "deluxe_studio_standard",
             "check_in": date(2026, 1, 19),
-            "check_out": date(2026, 1, 22),   # 42 pts -- valid
+            "check_out": date(2026, 1, 22),  # 42 pts -- valid
         },
     ]
 
-    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+    result = compute_scenario_impact(
+        contracts, balances, reservations, hypotheticals, date(2026, 1, 1)
+    )
 
     # One error, one resolved
     assert len(result["errors"]) == 1
@@ -262,7 +273,9 @@ def test_scenario_multiple_contracts():
         },
     ]
 
-    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+    result = compute_scenario_impact(
+        contracts, balances, reservations, hypotheticals, date(2026, 1, 1)
+    )
 
     assert len(result["contracts"]) == 2
     assert len(result["resolved_bookings"]) == 2
@@ -286,7 +299,9 @@ def test_scenario_all_points_consumed():
         },
     ]
 
-    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+    result = compute_scenario_impact(
+        contracts, balances, reservations, hypotheticals, date(2026, 1, 1)
+    )
 
     cr = result["contracts"][0]
     assert cr["baseline"]["available_points"] == 42

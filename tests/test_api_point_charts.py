@@ -1,4 +1,5 @@
 """Tests for point chart API endpoints."""
+
 import pytest
 
 
@@ -86,12 +87,15 @@ async def test_get_chart_seasons(client):
 @pytest.mark.asyncio
 async def test_calculate_cost_valid(client):
     """POST /api/point-charts/calculate with valid data returns stay cost."""
-    resp = await client.post("/api/point-charts/calculate", json={
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-12",
-        "check_out": "2026-01-15",
-    })
+    resp = await client.post(
+        "/api/point-charts/calculate",
+        json={
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-12",
+            "check_out": "2026-01-15",
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["resort"] == "polynesian"
@@ -106,18 +110,21 @@ async def test_calculate_cost_valid(client):
 async def test_calculate_cost_weekday_weekend_split(client):
     """Nightly breakdown correctly distinguishes weekday vs weekend pricing."""
     # Jan 9 Fri, Jan 10 Sat, Jan 11 Sun
-    resp = await client.post("/api/point-charts/calculate", json={
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-09",
-        "check_out": "2026-01-12",
-    })
+    resp = await client.post(
+        "/api/point-charts/calculate",
+        json={
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-09",
+            "check_out": "2026-01-12",
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
     nights = data["nightly_breakdown"]
-    assert nights[0]["is_weekend"] is True   # Friday
+    assert nights[0]["is_weekend"] is True  # Friday
     assert nights[0]["points"] == 19
-    assert nights[1]["is_weekend"] is True   # Saturday
+    assert nights[1]["is_weekend"] is True  # Saturday
     assert nights[1]["points"] == 19
     assert nights[2]["is_weekend"] is False  # Sunday
     assert nights[2]["points"] == 14
@@ -128,12 +135,15 @@ async def test_calculate_cost_weekday_weekend_split(client):
 async def test_calculate_cost_multi_season(client):
     """Multi-season stay is calculated correctly."""
     # Jan 31 (Adventure) -> Feb 1 (Choice)
-    resp = await client.post("/api/point-charts/calculate", json={
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-31",
-        "check_out": "2026-02-02",
-    })
+    resp = await client.post(
+        "/api/point-charts/calculate",
+        json={
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-31",
+            "check_out": "2026-02-02",
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
     nights = data["nightly_breakdown"]
@@ -144,46 +154,58 @@ async def test_calculate_cost_multi_season(client):
 @pytest.mark.asyncio
 async def test_calculate_cost_invalid_room(client):
     """POST /api/point-charts/calculate with invalid room returns 422."""
-    resp = await client.post("/api/point-charts/calculate", json={
-        "resort": "polynesian",
-        "room_key": "nonexistent_room",
-        "check_in": "2026-01-12",
-        "check_out": "2026-01-15",
-    })
+    resp = await client.post(
+        "/api/point-charts/calculate",
+        json={
+            "resort": "polynesian",
+            "room_key": "nonexistent_room",
+            "check_in": "2026-01-12",
+            "check_out": "2026-01-15",
+        },
+    )
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
 async def test_calculate_cost_missing_chart(client):
     """POST /api/point-charts/calculate with missing chart returns 404."""
-    resp = await client.post("/api/point-charts/calculate", json={
-        "resort": "nonexistent",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-12",
-        "check_out": "2026-01-15",
-    })
+    resp = await client.post(
+        "/api/point-charts/calculate",
+        json={
+            "resort": "nonexistent",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-12",
+            "check_out": "2026-01-15",
+        },
+    )
     assert resp.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_calculate_cost_checkout_before_checkin(client):
     """POST /api/point-charts/calculate with checkout before checkin returns 422."""
-    resp = await client.post("/api/point-charts/calculate", json={
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-15",
-        "check_out": "2026-01-12",
-    })
+    resp = await client.post(
+        "/api/point-charts/calculate",
+        json={
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-15",
+            "check_out": "2026-01-12",
+        },
+    )
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
 async def test_calculate_cost_exceeds_max_nights(client):
     """POST /api/point-charts/calculate with >14 nights returns 422."""
-    resp = await client.post("/api/point-charts/calculate", json={
-        "resort": "polynesian",
-        "room_key": "deluxe_studio_standard",
-        "check_in": "2026-01-01",
-        "check_out": "2026-01-20",
-    })
+    resp = await client.post(
+        "/api/point-charts/calculate",
+        json={
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": "2026-01-01",
+            "check_out": "2026-01-20",
+        },
+    )
     assert resp.status_code == 422

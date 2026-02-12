@@ -82,10 +82,7 @@ async def get_chart_seasons(resort: str, year: int):
     if chart is None:
         raise NotFoundError("Point chart not found")
 
-    seasons = [
-        {"name": s["name"], "date_ranges": s["date_ranges"]}
-        for s in chart["seasons"]
-    ]
+    seasons = [{"name": s["name"], "date_ranges": s["date_ranges"]} for s in chart["seasons"]]
     return {"resort": resort, "year": year, "seasons": seasons}
 
 
@@ -98,7 +95,9 @@ async def calculate_cost(request: PointCostRequest):
     except ValueError as exc:
         raise ValidationError(
             "Validation failed",
-            fields=[{"field": "check_in", "issue": "Invalid date format. Use ISO format (YYYY-MM-DD)."}],
+            fields=[
+                {"field": "check_in", "issue": "Invalid date format. Use ISO format (YYYY-MM-DD)."}
+            ],
         ) from exc
 
     if check_out <= check_in:
@@ -125,7 +124,12 @@ async def calculate_cost(request: PointCostRequest):
     if request.room_key not in room_keys:
         raise ValidationError(
             "Validation failed",
-            fields=[{"field": "room_key", "issue": f"Invalid room key '{request.room_key}'. Available: {sorted(room_keys)}"}],
+            fields=[
+                {
+                    "field": "room_key",
+                    "issue": f"Invalid room key '{request.room_key}'. Available: {sorted(room_keys)}",
+                }
+            ],
         )
 
     result = calculate_stay_cost(request.resort, request.room_key, check_in, check_out)

@@ -38,15 +38,20 @@ async def test_evaluate_valid_hypothetical(client):
     """POST /api/scenarios/evaluate with valid booking -> 200 with full response."""
     cid = await _create_contract_with_balance(client)
 
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [{
-            "contract_id": cid,
-            "resort": "polynesian",
-            "room_key": "deluxe_studio_standard",
-            "check_in": "2026-01-12",
-            "check_out": "2026-01-15",
-        }],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [
+                {
+                    "contract_id": cid,
+                    "resort": "polynesian",
+                    "room_key": "deluxe_studio_standard",
+                    "check_in": "2026-01-12",
+                    "check_out": "2026-01-15",
+                }
+            ],
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
 
@@ -84,9 +89,12 @@ async def test_evaluate_empty_bookings(client):
     """POST /api/scenarios/evaluate with empty list -> 200, zero impact."""
     await _create_contract_with_balance(client)
 
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [],
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
 
@@ -102,15 +110,20 @@ async def test_evaluate_ineligible_resort(client):
     # Resale at polynesian (original 14) can book other original 14 but NOT riviera
     cid = await _create_contract_with_balance(client, purchase_type="resale")
 
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [{
-            "contract_id": cid,
-            "resort": "riviera",
-            "room_key": "tower_studio",
-            "check_in": "2026-01-12",
-            "check_out": "2026-01-15",
-        }],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [
+                {
+                    "contract_id": cid,
+                    "resort": "riviera",
+                    "room_key": "tower_studio",
+                    "check_in": "2026-01-12",
+                    "check_out": "2026-01-15",
+                }
+            ],
+        },
+    )
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
@@ -123,15 +136,20 @@ async def test_evaluate_missing_contract(client):
     # Create at least one contract so we don't get the empty-contracts shortcut
     await _create_contract_with_balance(client)
 
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [{
-            "contract_id": 999,
-            "resort": "polynesian",
-            "room_key": "deluxe_studio_standard",
-            "check_in": "2026-01-12",
-            "check_out": "2026-01-15",
-        }],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [
+                {
+                    "contract_id": 999,
+                    "resort": "polynesian",
+                    "room_key": "deluxe_studio_standard",
+                    "check_in": "2026-01-12",
+                    "check_out": "2026-01-15",
+                }
+            ],
+        },
+    )
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
@@ -144,15 +162,20 @@ async def test_evaluate_checkout_before_checkin(client):
     """POST with check_out before check_in -> 422 with structured error."""
     cid = await _create_contract_with_balance(client)
 
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [{
-            "contract_id": cid,
-            "resort": "polynesian",
-            "room_key": "deluxe_studio_standard",
-            "check_in": "2026-01-15",
-            "check_out": "2026-01-12",
-        }],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [
+                {
+                    "contract_id": cid,
+                    "resort": "polynesian",
+                    "room_key": "deluxe_studio_standard",
+                    "check_in": "2026-01-15",
+                    "check_out": "2026-01-12",
+                }
+            ],
+        },
+    )
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
@@ -163,24 +186,27 @@ async def test_evaluate_multiple_bookings_cumulative(client):
     """POST with multiple bookings -> cumulative impact in summary."""
     cid = await _create_contract_with_balance(client)
 
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [
-            {
-                "contract_id": cid,
-                "resort": "polynesian",
-                "room_key": "deluxe_studio_standard",
-                "check_in": "2026-01-12",
-                "check_out": "2026-01-15",
-            },
-            {
-                "contract_id": cid,
-                "resort": "polynesian",
-                "room_key": "deluxe_studio_standard",
-                "check_in": "2026-01-19",
-                "check_out": "2026-01-22",
-            },
-        ],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [
+                {
+                    "contract_id": cid,
+                    "resort": "polynesian",
+                    "room_key": "deluxe_studio_standard",
+                    "check_in": "2026-01-12",
+                    "check_out": "2026-01-15",
+                },
+                {
+                    "contract_id": cid,
+                    "resort": "polynesian",
+                    "room_key": "deluxe_studio_standard",
+                    "check_in": "2026-01-19",
+                    "check_out": "2026-01-22",
+                },
+            ],
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
 
@@ -197,9 +223,12 @@ async def test_evaluate_multiple_bookings_cumulative(client):
 @pytest.mark.asyncio
 async def test_evaluate_no_contracts(client):
     """POST when no contracts exist -> 200 with empty results."""
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [],
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["contracts"] == []
@@ -210,9 +239,12 @@ async def test_evaluate_no_contracts(client):
 async def test_evaluate_empty_scenario(client):
     """POST with empty bookings list and existing contracts -> 200, zero impact."""
     await _create_contract_with_balance(client)
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [],
+        },
+    )
     assert resp.status_code == 200
     data = resp.json()
     assert data["summary"]["total_impact"] == 0
@@ -224,15 +256,20 @@ async def test_evaluate_empty_scenario(client):
 async def test_evaluate_ineligible_resort_structured(client):
     """POST with ineligible resort -> 422 with field detail."""
     cid = await _create_contract_with_balance(client, purchase_type="resale")
-    resp = await client.post("/api/scenarios/evaluate", json={
-        "hypothetical_bookings": [{
-            "contract_id": cid,
-            "resort": "riviera",
-            "room_key": "tower_studio",
-            "check_in": "2026-01-12",
-            "check_out": "2026-01-15",
-        }],
-    })
+    resp = await client.post(
+        "/api/scenarios/evaluate",
+        json={
+            "hypothetical_bookings": [
+                {
+                    "contract_id": cid,
+                    "resort": "riviera",
+                    "room_key": "tower_studio",
+                    "check_in": "2026-01-12",
+                    "check_out": "2026-01-15",
+                }
+            ],
+        },
+    )
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"

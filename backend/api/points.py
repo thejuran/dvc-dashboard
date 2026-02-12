@@ -19,9 +19,7 @@ router = APIRouter(tags=["points"])
 
 async def get_borrowing_limit_pct(db: AsyncSession) -> int:
     """Get the borrowing limit percentage from app settings."""
-    result = await db.execute(
-        select(AppSetting).where(AppSetting.key == "borrowing_limit_pct")
-    )
+    result = await db.execute(select(AppSetting).where(AppSetting.key == "borrowing_limit_pct"))
     setting = result.scalar_one_or_none()
     return int(setting.value) if setting else 100
 
@@ -108,10 +106,12 @@ async def create_point_balance(
     if data.allocation_type == "banked" and data.points > contract.annual_points:
         raise ValidationError(
             "Validation failed",
-            fields=[{
-                "field": "points",
-                "issue": f"Banked points ({data.points}) cannot exceed annual points ({contract.annual_points})",
-            }],
+            fields=[
+                {
+                    "field": "points",
+                    "issue": f"Banked points ({data.points}) cannot exceed annual points ({contract.annual_points})",
+                }
+            ],
         )
 
     # Enforce borrowing policy
@@ -121,13 +121,15 @@ async def create_point_balance(
         if data.points > max_borrowed:
             raise ValidationError(
                 "Validation failed",
-                fields=[{
-                    "field": "points",
-                    "issue": (
-                        f"Borrowed points ({data.points}) exceed borrowing limit "
-                        f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
-                    ),
-                }],
+                fields=[
+                    {
+                        "field": "points",
+                        "issue": (
+                            f"Borrowed points ({data.points}) exceed borrowing limit "
+                            f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
+                        ),
+                    }
+                ],
             )
 
     balance = PointBalance(
@@ -164,13 +166,15 @@ async def update_point_balance(
             if data.points > max_borrowed:
                 raise ValidationError(
                     "Validation failed",
-                    fields=[{
-                        "field": "points",
-                        "issue": (
-                            f"Borrowed points ({data.points}) exceed borrowing limit "
-                            f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
-                        ),
-                    }],
+                    fields=[
+                        {
+                            "field": "points",
+                            "issue": (
+                                f"Borrowed points ({data.points}) exceed borrowing limit "
+                                f"({borrowing_limit_pct}% of {contract.annual_points} = {max_borrowed} points)"
+                            ),
+                        }
+                    ],
                 )
 
     balance.points = data.points

@@ -39,9 +39,7 @@ def find_affordable_options(
 
     # Build set of resorts that have chart data for the check-in year
     all_charts = get_available_charts()
-    resorts_with_charts = {
-        c["resort"] for c in all_charts if c["year"] == check_in.year
-    }
+    resorts_with_charts = {c["resort"] for c in all_charts if c["year"] == check_in.year}
 
     # Build resort slug-to-name mapping
     resort_list = load_resorts()
@@ -75,9 +73,7 @@ def find_affordable_options(
         contract_name = contract.get("name") or contract.get("home_resort", "Unknown")
 
         # Get eligible resorts for this contract
-        eligible = get_eligible_resorts(
-            contract["home_resort"], contract["purchase_type"]
-        )
+        eligible = get_eligible_resorts(contract["home_resort"], contract["purchase_type"])
 
         for resort_slug in eligible:
             if resort_slug not in resorts_with_charts:
@@ -99,22 +95,24 @@ def find_affordable_options(
 
             # Check each room type
             for room_key in sorted(room_keys):
-                cost_result = calculate_stay_cost(
-                    resort_slug, room_key, check_in, check_out
-                )
+                cost_result = calculate_stay_cost(resort_slug, room_key, check_in, check_out)
                 if cost_result is not None and cost_result["total_points"] <= available_points:
-                    results.append({
-                        "contract_id": contract_id,
-                        "contract_name": contract_name,
-                        "available_points": available_points,
-                        "resort": resort_slug,
-                        "resort_name": resort_name_map.get(resort_slug, resort_slug),
-                        "room_key": room_key,
-                        "total_points": cost_result["total_points"],
-                        "num_nights": cost_result["num_nights"],
-                        "points_remaining": available_points - cost_result["total_points"],
-                        "nightly_avg": round(cost_result["total_points"] / cost_result["num_nights"]),
-                    })
+                    results.append(
+                        {
+                            "contract_id": contract_id,
+                            "contract_name": contract_name,
+                            "available_points": available_points,
+                            "resort": resort_slug,
+                            "resort_name": resort_name_map.get(resort_slug, resort_slug),
+                            "room_key": room_key,
+                            "total_points": cost_result["total_points"],
+                            "num_nights": cost_result["num_nights"],
+                            "points_remaining": available_points - cost_result["total_points"],
+                            "nightly_avg": round(
+                                cost_result["total_points"] / cost_result["num_nights"]
+                            ),
+                        }
+                    )
 
     # Sort by total_points ascending (cheapest first)
     results.sort(key=lambda r: r["total_points"])

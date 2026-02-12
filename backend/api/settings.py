@@ -42,10 +42,12 @@ async def update_setting(key: str, data: AppSettingUpdate, db: AsyncSession = De
     if data.value not in schema["allowed"]:
         raise ValidationError(
             "Validation failed",
-            fields=[{
-                "field": "value",
-                "issue": f"Invalid value '{data.value}' for '{key}'. Allowed: {schema['allowed']}",
-            }],
+            fields=[
+                {
+                    "field": "value",
+                    "issue": f"Invalid value '{data.value}' for '{key}'. Allowed: {schema['allowed']}",
+                }
+            ],
         )
 
     result = await db.execute(select(AppSetting).where(AppSetting.key == key))

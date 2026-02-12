@@ -29,12 +29,14 @@ from backend.spa import SPAStaticFiles
 
 settings = get_settings()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables on startup (dev convenience; production uses Alembic)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
+
 
 app = FastAPI(title="DVC Dashboard API", version="0.1.0", lifespan=lifespan)
 
@@ -62,14 +64,17 @@ app.include_router(settings_router)
 app.include_router(booking_windows_router)
 app.include_router(scenarios_router)
 
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "version": "0.1.0"}
+
 
 @app.get("/api/resorts")
 async def list_resorts():
     """Return all DVC resort metadata from data/resorts.json."""
     return load_resorts()
+
 
 # SPA mount MUST be LAST -- after all API routers and routes
 _spa_dir = Path(__file__).parent.parent / "frontend" / "dist"

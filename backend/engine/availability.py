@@ -53,7 +53,9 @@ def get_contract_availability(
     committed_points = 0
     committed_reservations = []
     for r in reservations:
-        check_in = r["check_in"] if isinstance(r["check_in"], date) else date.fromisoformat(r["check_in"])
+        check_in = (
+            r["check_in"] if isinstance(r["check_in"], date) else date.fromisoformat(r["check_in"])
+        )
         if r.get("status", "confirmed") == "cancelled":
             continue
         if uy_start <= check_in <= uy_end:

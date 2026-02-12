@@ -1,4 +1,5 @@
 """Tests for point chart data loader and cost calculations."""
+
 from datetime import date, timedelta
 
 from backend.data.point_charts import (
@@ -125,8 +126,7 @@ class TestCalculateStayCost:
         """3 weekday nights in Adventure = 3 x 14 = 42."""
         # Jan 12, 2026 is Monday
         result = calculate_stay_cost(
-            "polynesian", "deluxe_studio_standard",
-            date(2026, 1, 12), date(2026, 1, 15)
+            "polynesian", "deluxe_studio_standard", date(2026, 1, 12), date(2026, 1, 15)
         )
         assert result is not None
         assert result["num_nights"] == 3
@@ -137,16 +137,15 @@ class TestCalculateStayCost:
         """Stay from Fri-Sun has 2 weekend + 1 weekday nights."""
         # Jan 9, 2026 is Friday
         result = calculate_stay_cost(
-            "polynesian", "deluxe_studio_standard",
-            date(2026, 1, 9), date(2026, 1, 12)
+            "polynesian", "deluxe_studio_standard", date(2026, 1, 9), date(2026, 1, 12)
         )
         assert result is not None
         assert result["num_nights"] == 3
         # Fri=19, Sat=19, Sun=14
         assert result["total_points"] == 52
-        assert result["nightly_breakdown"][0]["is_weekend"] is True   # Friday
+        assert result["nightly_breakdown"][0]["is_weekend"] is True  # Friday
         assert result["nightly_breakdown"][0]["points"] == 19
-        assert result["nightly_breakdown"][1]["is_weekend"] is True   # Saturday
+        assert result["nightly_breakdown"][1]["is_weekend"] is True  # Saturday
         assert result["nightly_breakdown"][1]["points"] == 19
         assert result["nightly_breakdown"][2]["is_weekend"] is False  # Sunday
         assert result["nightly_breakdown"][2]["points"] == 14
@@ -155,8 +154,7 @@ class TestCalculateStayCost:
         """Stay crossing season boundary has correct per-night seasons."""
         # Jan 31 = Adventure, Feb 1 = Choice
         result = calculate_stay_cost(
-            "polynesian", "deluxe_studio_standard",
-            date(2026, 1, 30), date(2026, 2, 2)
+            "polynesian", "deluxe_studio_standard", date(2026, 1, 30), date(2026, 2, 2)
         )
         assert result is not None
         assert result["num_nights"] == 3
@@ -173,24 +171,21 @@ class TestCalculateStayCost:
     def test_nonexistent_chart_returns_none(self):
         """calculate_stay_cost returns None for missing chart."""
         result = calculate_stay_cost(
-            "nonexistent", "deluxe_studio_standard",
-            date(2026, 1, 12), date(2026, 1, 15)
+            "nonexistent", "deluxe_studio_standard", date(2026, 1, 12), date(2026, 1, 15)
         )
         assert result is None
 
     def test_invalid_room_returns_none(self):
         """calculate_stay_cost returns None for invalid room key."""
         result = calculate_stay_cost(
-            "polynesian", "nonexistent_room",
-            date(2026, 1, 12), date(2026, 1, 15)
+            "polynesian", "nonexistent_room", date(2026, 1, 12), date(2026, 1, 15)
         )
         assert result is None
 
     def test_nightly_breakdown_has_correct_fields(self):
         """Each nightly breakdown entry has all required fields."""
         result = calculate_stay_cost(
-            "polynesian", "deluxe_studio_standard",
-            date(2026, 1, 12), date(2026, 1, 14)
+            "polynesian", "deluxe_studio_standard", date(2026, 1, 12), date(2026, 1, 14)
         )
         assert result is not None
         night = result["nightly_breakdown"][0]

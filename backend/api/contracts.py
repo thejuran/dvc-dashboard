@@ -33,10 +33,7 @@ def _enrich_contract(contract: Contract) -> dict:
     eligible = get_eligible_resorts(contract.home_resort, contract.purchase_type)
     timeline = _build_timeline_summary(contract.use_year_month)
 
-    balances = [
-        PointBalanceResponse.model_validate(pb)
-        for pb in (contract.point_balances or [])
-    ]
+    balances = [PointBalanceResponse.model_validate(pb) for pb in (contract.point_balances or [])]
 
     return ContractWithDetails(
         id=contract.id,
@@ -56,9 +53,7 @@ def _enrich_contract(contract: Contract) -> dict:
 @router.get("/", response_model=list[ContractWithDetails])
 async def list_contracts(db: AsyncSession = Depends(get_db)):
     """List all contracts with point balances, eligible resorts, and timeline."""
-    result = await db.execute(
-        select(Contract).options(selectinload(Contract.point_balances))
-    )
+    result = await db.execute(select(Contract).options(selectinload(Contract.point_balances)))
     contracts = result.scalars().all()
     return [_enrich_contract(c) for c in contracts]
 

@@ -39,6 +39,7 @@ def error_response(
 # Custom exception classes
 # ---------------------------------------------------------------------------
 
+
 class AppError(Exception):
     """Base exception for all application errors."""
 
@@ -87,6 +88,7 @@ class ServerError(AppError):
 # Exception handlers (registered on the FastAPI app)
 # ---------------------------------------------------------------------------
 
+
 async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
     """Handle custom AppError subclasses."""
     if isinstance(exc, ServerError):
@@ -95,9 +97,7 @@ async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
     return error_response(exc.status_code, exc.error_type, exc.message, exc.fields)
 
 
-async def handle_http_exception(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """Handle FastAPI/Starlette HTTPException (legacy raises)."""
     status_map: dict[int, str] = {
         404: "NOT_FOUND",
@@ -115,9 +115,7 @@ async def handle_http_exception(
     return error_response(exc.status_code, error_type, message)
 
 
-async def handle_pydantic_validation(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def handle_pydantic_validation(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Handle Pydantic request validation errors.
 
     Returns ALL invalid fields at once (not fail-on-first).

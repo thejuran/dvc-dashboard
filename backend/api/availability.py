@@ -16,7 +16,9 @@ router = APIRouter(tags=["availability"])
 
 @router.get("/api/availability")
 async def get_availability(
-    target_date: date = Query(..., description="Target date (YYYY-MM-DD) to check availability for"),
+    target_date: date = Query(
+        ..., description="Target date (YYYY-MM-DD) to check availability for"
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -35,10 +37,12 @@ async def get_availability(
     if target_date.year < 2020 or target_date.year > 2040:
         raise ValidationError(
             "Validation failed",
-            fields=[{
-                "field": "target_date",
-                "issue": "Year must be between 2020 and 2040",
-            }],
+            fields=[
+                {
+                    "field": "target_date",
+                    "issue": "Year must be between 2020 and 2040",
+                }
+            ],
         )
 
     # Load all contracts
@@ -50,9 +54,7 @@ async def get_availability(
     all_balances = result.scalars().all()
 
     # Load all non-cancelled reservations
-    result = await db.execute(
-        select(Reservation).where(Reservation.status != "cancelled")
-    )
+    result = await db.execute(select(Reservation).where(Reservation.status != "cancelled"))
     all_reservations = result.scalars().all()
 
     # Convert ORM objects to dicts for the pure-function engine

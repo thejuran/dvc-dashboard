@@ -38,26 +38,32 @@ def compute_scenario_impact(
     errors = []
     for hb in hypothetical_bookings:
         cost = calculate_stay_cost(
-            hb["resort"], hb["room_key"],
-            hb["check_in"], hb["check_out"],
+            hb["resort"],
+            hb["room_key"],
+            hb["check_in"],
+            hb["check_out"],
         )
         if cost is None:
-            errors.append({
+            errors.append(
+                {
+                    "resort": hb["resort"],
+                    "room_key": hb["room_key"],
+                    "error": "Point chart data not available",
+                }
+            )
+            continue
+        resolved_hypotheticals.append(
+            {
+                "contract_id": hb["contract_id"],
+                "check_in": hb["check_in"],
+                "check_out": hb["check_out"],
+                "points_cost": cost["total_points"],
                 "resort": hb["resort"],
                 "room_key": hb["room_key"],
-                "error": "Point chart data not available",
-            })
-            continue
-        resolved_hypotheticals.append({
-            "contract_id": hb["contract_id"],
-            "check_in": hb["check_in"],
-            "check_out": hb["check_out"],
-            "points_cost": cost["total_points"],
-            "resort": hb["resort"],
-            "room_key": hb["room_key"],
-            "status": "confirmed",
-            "num_nights": cost["num_nights"],
-        })
+                "status": "confirmed",
+                "num_nights": cost["num_nights"],
+            }
+        )
 
     # 2. Compute baseline and scenario for each contract
     contract_results = []
@@ -78,8 +84,12 @@ def compute_scenario_impact(
 
         # Scenario = real reservations + resolved hypotheticals
         scenario_reservations = c_real_reservations + [
-            {"check_in": h["check_in"], "points_cost": h["points_cost"],
-             "status": "confirmed", "contract_id": cid}
+            {
+                "check_in": h["check_in"],
+                "points_cost": h["points_cost"],
+                "status": "confirmed",
+                "contract_id": cid,
+            }
             for h in c_hypotheticals
         ]
 
@@ -92,14 +102,16 @@ def compute_scenario_impact(
             target_date=target_date,
         )
 
-        contract_results.append({
-            "contract_id": cid,
-            "contract_name": contract.get("name") or contract.get("home_resort"),
-            "home_resort": contract.get("home_resort"),
-            "baseline": baseline,
-            "scenario": scenario,
-            "hypothetical_bookings": c_hypotheticals,
-        })
+        contract_results.append(
+            {
+                "contract_id": cid,
+                "contract_name": contract.get("name") or contract.get("home_resort"),
+                "home_resort": contract.get("home_resort"),
+                "baseline": baseline,
+                "scenario": scenario,
+                "hypothetical_bookings": c_hypotheticals,
+            }
+        )
 
     # 3. Compute grand totals
     baseline_total = sum(c["baseline"]["available_points"] for c in contract_results)

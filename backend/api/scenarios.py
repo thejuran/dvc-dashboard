@@ -57,23 +57,27 @@ async def evaluate_scenario(
         if not contract:
             raise ValidationError(
                 "Validation failed",
-                fields=[{
-                    "field": f"hypothetical_bookings[{idx}].contract_id",
-                    "issue": f"Contract {hb.contract_id} not found",
-                }],
+                fields=[
+                    {
+                        "field": f"hypothetical_bookings[{idx}].contract_id",
+                        "issue": f"Contract {hb.contract_id} not found",
+                    }
+                ],
             )
         eligible = get_eligible_resorts(contract.home_resort, contract.purchase_type)
         if hb.resort not in eligible:
             raise ValidationError(
                 "Validation failed",
-                fields=[{
-                    "field": f"hypothetical_bookings[{idx}].resort",
-                    "issue": (
-                        f"Resort '{hb.resort}' is not eligible for contract {hb.contract_id} "
-                        f"({contract.purchase_type} at {contract.home_resort}). "
-                        f"Eligible resorts: {eligible}"
-                    ),
-                }],
+                fields=[
+                    {
+                        "field": f"hypothetical_bookings[{idx}].resort",
+                        "issue": (
+                            f"Resort '{hb.resort}' is not eligible for contract {hb.contract_id} "
+                            f"({contract.purchase_type} at {contract.home_resort}). "
+                            f"Eligible resorts: {eligible}"
+                        ),
+                    }
+                ],
             )
 
     # 4. Load all point balances
@@ -81,9 +85,7 @@ async def evaluate_scenario(
     all_balances = result.scalars().all()
 
     # 5. Load all non-cancelled reservations
-    result = await db.execute(
-        select(Reservation).where(Reservation.status != "cancelled")
-    )
+    result = await db.execute(select(Reservation).where(Reservation.status != "cancelled"))
     all_reservations = result.scalars().all()
 
     # 6. Convert ORM objects to dicts (same pattern as reservations.py)
@@ -141,18 +143,20 @@ async def evaluate_scenario(
     # 8. Map engine result to response schema
     contract_responses = []
     for cr in engine_result["contracts"]:
-        contract_responses.append(ContractScenarioResult(
-            contract_id=cr["contract_id"],
-            contract_name=cr["contract_name"],
-            home_resort=cr["home_resort"],
-            baseline_available=cr["baseline"]["available_points"],
-            baseline_total=cr["baseline"]["total_points"],
-            baseline_committed=cr["baseline"]["committed_points"],
-            scenario_available=cr["scenario"]["available_points"],
-            scenario_total=cr["scenario"]["total_points"],
-            scenario_committed=cr["scenario"]["committed_points"],
-            impact=cr["baseline"]["available_points"] - cr["scenario"]["available_points"],
-        ))
+        contract_responses.append(
+            ContractScenarioResult(
+                contract_id=cr["contract_id"],
+                contract_name=cr["contract_name"],
+                home_resort=cr["home_resort"],
+                baseline_available=cr["baseline"]["available_points"],
+                baseline_total=cr["baseline"]["total_points"],
+                baseline_committed=cr["baseline"]["committed_points"],
+                scenario_available=cr["scenario"]["available_points"],
+                scenario_total=cr["scenario"]["total_points"],
+                scenario_committed=cr["scenario"]["committed_points"],
+                impact=cr["baseline"]["available_points"] - cr["scenario"]["available_points"],
+            )
+        )
 
     resolved_responses = [
         ResolvedBooking(

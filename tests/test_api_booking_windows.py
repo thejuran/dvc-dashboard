@@ -52,7 +52,8 @@ async def test_any_resort_window_alert(client):
 
     cid = await _create_contract(client)
     await _create_reservation(
-        client, cid,
+        client,
+        cid,
         resort="polynesian",
         check_in=check_in.isoformat(),
         check_out=check_out.isoformat(),
@@ -84,7 +85,8 @@ async def test_home_resort_window_alert(client):
 
     cid = await _create_contract(client, home_resort="polynesian")
     await _create_reservation(
-        client, cid,
+        client,
+        cid,
         resort="polynesian",  # same as home_resort
         check_in=check_in.isoformat(),
         check_out=check_out.isoformat(),
@@ -117,13 +119,15 @@ async def test_alerts_sorted_by_days_until_open(client):
     check_out_later = check_in_later + timedelta(days=3)
 
     await _create_reservation(
-        client, cid,
+        client,
+        cid,
         resort="polynesian",
         check_in=check_in_later.isoformat(),
         check_out=check_out_later.isoformat(),
     )
     await _create_reservation(
-        client, cid,
+        client,
+        cid,
         resort="polynesian",
         check_in=check_in_soon.isoformat(),
         check_out=check_out_soon.isoformat(),
@@ -151,7 +155,8 @@ async def test_cap_at_5(client):
         check_in = today + timedelta(days=offset_days)
         check_out = check_in + timedelta(days=3)
         await _create_reservation(
-            client, cid,
+            client,
+            cid,
             resort="polynesian",
             check_in=check_in.isoformat(),
             check_out=check_out.isoformat(),
@@ -173,7 +178,8 @@ async def test_cancelled_reservations_excluded(client):
     cid = await _create_contract(client)
     # Create a reservation and then cancel it
     res_data = await _create_reservation(
-        client, cid,
+        client,
+        cid,
         resort="polynesian",
         check_in=check_in.isoformat(),
         check_out=check_out.isoformat(),
@@ -197,7 +203,8 @@ async def test_already_open_windows_excluded(client):
 
     cid = await _create_contract(client)
     await _create_reservation(
-        client, cid,
+        client,
+        cid,
         resort="polynesian",
         check_in=check_in.isoformat(),
         check_out=check_out.isoformat(),

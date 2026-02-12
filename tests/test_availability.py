@@ -294,7 +294,11 @@ def test_reservation_at_uy_boundary_last_day():
             {"use_year": 2025, "allocation_type": "current", "points": 160},
         ],
         reservations=[
-            {"check_in": date(2026, 5, 31), "points_cost": 50, "status": "confirmed"},  # Last day of UY 2025
+            {
+                "check_in": date(2026, 5, 31),
+                "points_cost": 50,
+                "status": "confirmed",
+            },  # Last day of UY 2025
         ],
         target_date=date(2025, 7, 1),
     )
@@ -311,7 +315,11 @@ def test_reservation_at_uy_start():
             {"use_year": 2025, "allocation_type": "current", "points": 160},
         ],
         reservations=[
-            {"check_in": date(2025, 6, 1), "points_cost": 50, "status": "confirmed"},  # First day of UY 2025
+            {
+                "check_in": date(2025, 6, 1),
+                "points_cost": 50,
+                "status": "confirmed",
+            },  # First day of UY 2025
         ],
         target_date=date(2025, 7, 1),
     )
@@ -324,8 +332,20 @@ def test_reservation_at_uy_start():
 def test_two_contracts_different_uy():
     """Two contracts with different UY months: correct per-contract breakdown."""
     contracts = [
-        {"id": 1, "name": "Poly", "home_resort": "polynesian", "use_year_month": 6, "annual_points": 160},
-        {"id": 2, "name": "Riviera", "home_resort": "riviera", "use_year_month": 12, "annual_points": 200},
+        {
+            "id": 1,
+            "name": "Poly",
+            "home_resort": "polynesian",
+            "use_year_month": 6,
+            "annual_points": 160,
+        },
+        {
+            "id": 2,
+            "name": "Riviera",
+            "home_resort": "riviera",
+            "use_year_month": 12,
+            "annual_points": 200,
+        },
     ]
     balances = [
         {"contract_id": 1, "use_year": 2025, "allocation_type": "current", "points": 160},
@@ -333,7 +353,12 @@ def test_two_contracts_different_uy():
     ]
     reservations = [
         {"contract_id": 1, "check_in": date(2026, 3, 15), "points_cost": 85, "status": "confirmed"},
-        {"contract_id": 2, "check_in": date(2026, 1, 10), "points_cost": 100, "status": "confirmed"},
+        {
+            "contract_id": 2,
+            "check_in": date(2026, 1, 10),
+            "points_cost": 100,
+            "status": "confirmed",
+        },
     ]
 
     result = get_all_contracts_availability(
@@ -361,8 +386,20 @@ def test_two_contracts_different_uy():
 def test_grand_total_matches_sum():
     """Grand total = sum of all contract available points."""
     contracts = [
-        {"id": 1, "name": "Poly", "home_resort": "polynesian", "use_year_month": 6, "annual_points": 160},
-        {"id": 2, "name": "Riviera", "home_resort": "riviera", "use_year_month": 12, "annual_points": 200},
+        {
+            "id": 1,
+            "name": "Poly",
+            "home_resort": "polynesian",
+            "use_year_month": 6,
+            "annual_points": 160,
+        },
+        {
+            "id": 2,
+            "name": "Riviera",
+            "home_resort": "riviera",
+            "use_year_month": 12,
+            "annual_points": 200,
+        },
     ]
     balances = [
         {"contract_id": 1, "use_year": 2025, "allocation_type": "current", "points": 160},

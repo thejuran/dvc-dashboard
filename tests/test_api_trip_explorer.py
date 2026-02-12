@@ -41,9 +41,7 @@ async def test_trip_explorer_valid_dates(client):
     """GET /api/trip-explorer with valid dates -> 200 with options."""
     await _create_contract_with_balance(client)
 
-    resp = await client.get(
-        "/api/trip-explorer?check_in=2026-01-12&check_out=2026-01-14"
-    )
+    resp = await client.get("/api/trip-explorer?check_in=2026-01-12&check_out=2026-01-14")
     assert resp.status_code == 200
     data = resp.json()
     assert "options" in data
@@ -56,9 +54,7 @@ async def test_trip_explorer_valid_dates(client):
 @pytest.mark.asyncio
 async def test_trip_explorer_checkout_before_checkin(client):
     """GET with check_out before check_in -> 422 with structured error."""
-    resp = await client.get(
-        "/api/trip-explorer?check_in=2026-01-15&check_out=2026-01-12"
-    )
+    resp = await client.get("/api/trip-explorer?check_in=2026-01-15&check_out=2026-01-12")
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
@@ -69,9 +65,7 @@ async def test_trip_explorer_checkout_before_checkin(client):
 @pytest.mark.asyncio
 async def test_trip_explorer_over_14_nights(client):
     """GET with stay > 14 nights -> 422 with structured error."""
-    resp = await client.get(
-        "/api/trip-explorer?check_in=2026-01-01&check_out=2026-01-20"
-    )
+    resp = await client.get("/api/trip-explorer?check_in=2026-01-01&check_out=2026-01-20")
     assert resp.status_code == 422
     body = resp.json()
     assert body["error"]["type"] == "VALIDATION_ERROR"
@@ -82,9 +76,7 @@ async def test_trip_explorer_over_14_nights(client):
 @pytest.mark.asyncio
 async def test_trip_explorer_no_contracts(client):
     """GET with empty DB -> 200 with empty options."""
-    resp = await client.get(
-        "/api/trip-explorer?check_in=2026-01-12&check_out=2026-01-14"
-    )
+    resp = await client.get("/api/trip-explorer?check_in=2026-01-12&check_out=2026-01-14")
     assert resp.status_code == 200
     data = resp.json()
     assert data["options"] == []

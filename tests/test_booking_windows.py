@@ -92,7 +92,7 @@ def test_compute_booking_windows_home_open_any_not():
     assert result["home_resort_window_open"] is True
     assert result["any_resort_window_open"] is False
     assert result["days_until_home_window"] < 0  # already passed
-    assert result["days_until_any_window"] > 0   # still in the future
+    assert result["days_until_any_window"] > 0  # still in the future
 
 
 def test_compute_booking_windows_not_home_resort():

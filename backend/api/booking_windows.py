@@ -59,15 +59,17 @@ async def get_upcoming_booking_windows(
         ):
             resort_info = get_resort_by_slug(res.resort)
             resort_name = resort_info["name"] if resort_info else res.resort
-            alerts.append({
-                "contract_name": contract.name or f"Contract #{contract.id}",
-                "resort": res.resort,
-                "resort_name": resort_name,
-                "check_in": res.check_in.isoformat(),
-                "window_type": "home_resort",
-                "window_date": window_data["home_resort_window"],
-                "days_until_open": window_data["days_until_home_window"],
-            })
+            alerts.append(
+                {
+                    "contract_name": contract.name or f"Contract #{contract.id}",
+                    "resort": res.resort,
+                    "resort_name": resort_name,
+                    "check_in": res.check_in.isoformat(),
+                    "window_type": "home_resort",
+                    "window_date": window_data["home_resort_window"],
+                    "days_until_open": window_data["days_until_home_window"],
+                }
+            )
 
         # Any resort window (7-month): include if not yet open and within look-ahead
         if (
@@ -76,15 +78,17 @@ async def get_upcoming_booking_windows(
         ):
             resort_info = get_resort_by_slug(res.resort)
             resort_name = resort_info["name"] if resort_info else res.resort
-            alerts.append({
-                "contract_name": contract.name or f"Contract #{contract.id}",
-                "resort": res.resort,
-                "resort_name": resort_name,
-                "check_in": res.check_in.isoformat(),
-                "window_type": "any_resort",
-                "window_date": window_data["any_resort_window"],
-                "days_until_open": window_data["days_until_any_window"],
-            })
+            alerts.append(
+                {
+                    "contract_name": contract.name or f"Contract #{contract.id}",
+                    "resort": res.resort,
+                    "resort_name": resort_name,
+                    "check_in": res.check_in.isoformat(),
+                    "window_type": "any_resort",
+                    "window_date": window_data["any_resort_window"],
+                    "days_until_open": window_data["days_until_any_window"],
+                }
+            )
 
     # Sort by soonest opening first
     alerts.sort(key=lambda a: a["days_until_open"])
