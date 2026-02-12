@@ -41,7 +41,7 @@ export default function ScenarioComparison({
     <div className="space-y-3">
       <h3 className="text-sm font-medium">Baseline vs Scenario</h3>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

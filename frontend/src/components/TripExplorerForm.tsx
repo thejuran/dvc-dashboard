@@ -18,25 +18,25 @@ export default function TripExplorerForm({
 }: TripExplorerFormProps) {
   return (
     <div className="mb-6">
-      <div className="flex gap-4 items-end">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+        <div className="w-full sm:w-auto">
           <Label htmlFor="check-in">Check-in</Label>
           <Input
             id="check-in"
             type="date"
             value={checkIn}
             onChange={(e) => onCheckInChange(e.target.value)}
-            className="w-48 mt-1"
+            className="w-full sm:w-48 mt-1"
           />
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <Label htmlFor="check-out">Check-out</Label>
           <Input
             id="check-out"
             type="date"
             value={checkOut}
             onChange={(e) => onCheckOutChange(e.target.value)}
-            className="w-48 mt-1"
+            className="w-full sm:w-48 mt-1"
           />
         </div>
       </div>

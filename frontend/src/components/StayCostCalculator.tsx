@@ -135,7 +135,7 @@ export default function StayCostCalculator({
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Button onClick={handleCalculate} disabled={mutation.isPending}>
           {mutation.isPending ? "Calculating..." : "Calculate"}
         </Button>
@@ -177,30 +177,32 @@ export default function StayCostCalculator({
             </Card>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Day</TableHead>
-                <TableHead>Season</TableHead>
-                <TableHead>Weekend?</TableHead>
-                <TableHead className="text-right">Points</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {result.nightly_breakdown.map((night) => (
-                <TableRow key={night.date}>
-                  <TableCell>{night.date}</TableCell>
-                  <TableCell>{night.day_of_week}</TableCell>
-                  <TableCell>{night.season}</TableCell>
-                  <TableCell>{night.is_weekend ? "Yes" : "No"}</TableCell>
-                  <TableCell className="text-right tabular-nums font-medium">
-                    {night.points}
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Day</TableHead>
+                  <TableHead>Season</TableHead>
+                  <TableHead>Weekend?</TableHead>
+                  <TableHead className="text-right">Points</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {result.nightly_breakdown.map((night) => (
+                  <TableRow key={night.date}>
+                    <TableCell>{night.date}</TableCell>
+                    <TableCell>{night.day_of_week}</TableCell>
+                    <TableCell>{night.season}</TableCell>
+                    <TableCell>{night.is_weekend ? "Yes" : "No"}</TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">
+                      {night.points}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
     </div>
