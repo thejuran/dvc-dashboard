@@ -26,11 +26,32 @@ import type {
   ContractWithDetails,
   PurchaseType,
 } from "../types";
+import { ApiError } from "@/lib/api";
 
 interface ContractFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editContract?: ContractWithDetails | null;
+}
+
+function validateField(name: string, value: string): string {
+  switch (name) {
+    case "homeResort":
+      return value ? "" : "Home resort is required";
+    case "useYearMonth":
+      return value ? "" : "Use year month is required";
+    case "annualPoints": {
+      if (!value) return "Annual points is required";
+      const n = Number(value);
+      if (isNaN(n) || n < 1 || n > 2000)
+        return "Annual points must be between 1 and 2,000";
+      return "";
+    }
+    case "name":
+      return value.length > 100 ? "Name must be 100 characters or less" : "";
+    default:
+      return "";
+  }
 }
 
 export default function ContractFormDialog({
@@ -47,6 +68,7 @@ export default function ContractFormDialog({
   const [useYearMonth, setUseYearMonth] = useState<string>("");
   const [annualPoints, setAnnualPoints] = useState("");
   const [purchaseType, setPurchaseType] = useState<PurchaseType>("resale");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isEditing = !!editContract;
 
@@ -64,10 +86,40 @@ export default function ContractFormDialog({
       setAnnualPoints("");
       setPurchaseType("resale");
     }
+    setFieldErrors({});
   }, [editContract, open]);
+
+  const handleBlur = (fieldName: string, value: string) => {
+    const error = validateField(fieldName, value);
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+  };
+
+  const handleSelectChange = (fieldName: string, value: string, setter: (v: string) => void) => {
+    setter(value);
+    const error = validateField(fieldName, value);
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+  };
+
+  const validateAll = (): boolean => {
+    const errors: Record<string, string> = {};
+    errors.name = validateField("name", name);
+    errors.homeResort = validateField("homeResort", homeResort);
+    errors.useYearMonth = validateField("useYearMonth", useYearMonth);
+    errors.annualPoints = validateField("annualPoints", annualPoints);
+
+    // Remove empty errors
+    const filtered: Record<string, string> = {};
+    for (const [k, v] of Object.entries(errors)) {
+      if (v) filtered[k] = v;
+    }
+    setFieldErrors(filtered);
+    return Object.keys(filtered).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateAll()) return;
 
     const data = {
       name: name || undefined,
@@ -77,12 +129,18 @@ export default function ContractFormDialog({
       purchase_type: purchaseType,
     };
 
-    if (isEditing && editContract) {
-      await updateContract.mutateAsync({ id: editContract.id, data });
-    } else {
-      await createContract.mutateAsync(data);
+    try {
+      if (isEditing && editContract) {
+        await updateContract.mutateAsync({ id: editContract.id, data });
+      } else {
+        await createContract.mutateAsync(data);
+      }
+      onOpenChange(false);
+    } catch (err) {
+      if (err instanceof ApiError && err.fields.length > 0) {
+        setFieldErrors(err.toFieldErrors());
+      }
     }
-    onOpenChange(false);
   };
 
   const isPending = createContract.isPending || updateContract.isPending;
@@ -109,12 +167,19 @@ export default function ContractFormDialog({
               placeholder="e.g., Our Poly contract"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onBlur={() => handleBlur("name", name)}
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="home_resort">Home Resort</Label>
-            <Select value={homeResort} onValueChange={setHomeResort}>
+            <Select
+              value={homeResort}
+              onValueChange={(v) => handleSelectChange("homeResort", v, setHomeResort)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a resort" />
               </SelectTrigger>
@@ -126,11 +191,17 @@ export default function ContractFormDialog({
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.homeResort && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.homeResort}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="use_year_month">Use Year Month</Label>
-            <Select value={useYearMonth} onValueChange={setUseYearMonth}>
+            <Select
+              value={useYearMonth}
+              onValueChange={(v) => handleSelectChange("useYearMonth", v, setUseYearMonth)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select month" />
               </SelectTrigger>
@@ -142,6 +213,9 @@ export default function ContractFormDialog({
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.useYearMonth && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.useYearMonth}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -154,8 +228,12 @@ export default function ContractFormDialog({
               placeholder="e.g., 160"
               value={annualPoints}
               onChange={(e) => setAnnualPoints(e.target.value)}
+              onBlur={() => handleBlur("annualPoints", annualPoints)}
               required
             />
+            {fieldErrors.annualPoints && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.annualPoints}</p>
+            )}
           </div>
 
           <div className="space-y-2">

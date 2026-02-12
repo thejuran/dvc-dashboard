@@ -19,6 +19,39 @@ interface ScenarioBookingFormProps {
   bookingCount: number;
 }
 
+function validateField(
+  name: string,
+  value: string,
+  extra?: { checkIn?: string }
+): string {
+  switch (name) {
+    case "contractId":
+      return value ? "" : "Contract is required";
+    case "resort":
+      return value ? "" : "Resort is required";
+    case "roomKey":
+      return value ? "" : "Room type is required";
+    case "checkIn":
+      return value ? "" : "Check-in date is required";
+    case "checkOut": {
+      if (!value) return "Check-out date is required";
+      if (extra?.checkIn && value <= extra.checkIn)
+        return "Check-out must be after check-in";
+      if (extra?.checkIn) {
+        const start = new Date(extra.checkIn + "T00:00:00");
+        const end = new Date(value + "T00:00:00");
+        const nights = Math.round(
+          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (nights > 14) return "Stay cannot exceed 14 nights";
+      }
+      return "";
+    }
+    default:
+      return "";
+  }
+}
+
 export default function ScenarioBookingForm({
   bookingCount,
 }: ScenarioBookingFormProps) {
@@ -31,6 +64,7 @@ export default function ScenarioBookingForm({
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [checkIn, setCheckIn] = useState<string>("");
   const [checkOut, setCheckOut] = useState<string>("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const addBooking = useScenarioStore((s) => s.addBooking);
 
@@ -80,19 +114,71 @@ export default function ScenarioBookingForm({
 
   const atCap = bookingCount >= 10;
 
+  const handleBlur = (fieldName: string, value: string) => {
+    const error = validateField(fieldName, value, { checkIn });
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+  };
+
+  const handleSelectChange = (
+    fieldName: string,
+    value: string,
+    setter: (v: string) => void
+  ) => {
+    setter(value);
+    const error = validateField(fieldName, value, { checkIn });
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+  };
+
+  const handleDateChange = (
+    fieldName: string,
+    value: string,
+    setter: (v: string) => void
+  ) => {
+    setter(value);
+    const ci = fieldName === "checkIn" ? value : checkIn;
+    const error = validateField(fieldName, value, { checkIn: ci });
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+    // Re-validate checkOut when checkIn changes
+    if (fieldName === "checkIn" && checkOut) {
+      const coError = validateField("checkOut", checkOut, { checkIn: value });
+      setFieldErrors((prev) => ({ ...prev, checkOut: coError }));
+    }
+  };
+
   function handleContractChange(value: string) {
     setSelectedContractId(value);
     setSelectedResort("");
     setSelectedRoom("");
+    const error = validateField("contractId", value);
+    setFieldErrors((prev) => ({ ...prev, contractId: error }));
   }
 
   function handleResortChange(value: string) {
     setSelectedResort(value);
     setSelectedRoom("");
+    const error = validateField("resort", value);
+    setFieldErrors((prev) => ({ ...prev, resort: error }));
   }
 
+  const validateAll = (): boolean => {
+    const errors: Record<string, string> = {};
+    errors.contractId = validateField("contractId", selectedContractId);
+    errors.resort = validateField("resort", selectedResort);
+    errors.roomKey = validateField("roomKey", selectedRoom);
+    errors.checkIn = validateField("checkIn", checkIn);
+    errors.checkOut = validateField("checkOut", checkOut, { checkIn });
+
+    const filtered: Record<string, string> = {};
+    for (const [k, v] of Object.entries(errors)) {
+      if (v) filtered[k] = v;
+    }
+    setFieldErrors(filtered);
+    return Object.keys(filtered).length === 0;
+  };
+
   function handleSubmit() {
-    if (!isFormComplete || atCap || !selectedContract) return;
+    if (atCap || !selectedContract) return;
+    if (!validateAll()) return;
 
     const resort = resorts?.find((r) => r.slug === selectedResort);
 
@@ -111,6 +197,7 @@ export default function ScenarioBookingForm({
     setSelectedRoom("");
     setCheckIn("");
     setCheckOut("");
+    setFieldErrors({});
   }
 
   return (
@@ -138,6 +225,9 @@ export default function ScenarioBookingForm({
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.contractId && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.contractId}</p>
+            )}
           </div>
 
           {/* Resort selector */}
@@ -159,6 +249,9 @@ export default function ScenarioBookingForm({
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.resort && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.resort}</p>
+            )}
           </div>
 
           {/* Room type selector */}
@@ -166,7 +259,7 @@ export default function ScenarioBookingForm({
             <Label>Room Type</Label>
             <Select
               value={selectedRoom}
-              onValueChange={setSelectedRoom}
+              onValueChange={(v) => handleSelectChange("roomKey", v, setSelectedRoom)}
               disabled={!selectedResort}
             >
               <SelectTrigger className="w-full">
@@ -180,6 +273,9 @@ export default function ScenarioBookingForm({
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.roomKey && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.roomKey}</p>
+            )}
           </div>
 
           {/* Check-in date */}
@@ -190,13 +286,17 @@ export default function ScenarioBookingForm({
               value={checkIn}
               min={today}
               onChange={(e) => {
-                setCheckIn(e.target.value);
+                handleDateChange("checkIn", e.target.value, setCheckIn);
                 // Reset check-out if it's before new check-in
                 if (checkOut && e.target.value >= checkOut) {
                   setCheckOut("");
                 }
               }}
+              onBlur={() => handleBlur("checkIn", checkIn)}
             />
+            {fieldErrors.checkIn && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.checkIn}</p>
+            )}
           </div>
 
           {/* Check-out date */}
@@ -208,8 +308,12 @@ export default function ScenarioBookingForm({
               min={checkIn || today}
               max={maxCheckOut}
               disabled={!checkIn}
-              onChange={(e) => setCheckOut(e.target.value)}
+              onChange={(e) => handleDateChange("checkOut", e.target.value, setCheckOut)}
+              onBlur={() => handleBlur("checkOut", checkOut)}
             />
+            {fieldErrors.checkOut && (
+              <p className="text-xs text-destructive mt-1">{fieldErrors.checkOut}</p>
+            )}
           </div>
 
           {/* Add button */}

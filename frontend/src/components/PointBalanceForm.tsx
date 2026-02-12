@@ -23,6 +23,7 @@ import {
 } from "../hooks/usePoints";
 import type { PointAllocationType } from "../types";
 import { ALLOCATION_TYPE_LABELS } from "../types";
+import { ApiError } from "@/lib/api";
 
 interface PointBalanceFormProps {
   contractId: number;
@@ -35,6 +36,28 @@ const ALLOCATION_TYPES: PointAllocationType[] = [
   "holding",
 ];
 
+function validateField(name: string, value: string): string {
+  switch (name) {
+    case "useYear": {
+      if (!value) return "Use year is required";
+      const n = Number(value);
+      if (isNaN(n) || n < 2020 || n > 2035)
+        return "Use year must be between 2020 and 2035";
+      return "";
+    }
+    case "points": {
+      if (value === "" || value === undefined) return "Points is required";
+      const n = Number(value);
+      if (isNaN(n) || n < 0) return "Points must be 0 or more";
+      return "";
+    }
+    case "allocationType":
+      return value ? "" : "Allocation type is required";
+    default:
+      return "";
+  }
+}
+
 export default function PointBalanceForm({ contractId }: PointBalanceFormProps) {
   const { data: pointsData } = useContractPoints(contractId);
   const createBalance = useCreatePointBalance();
@@ -43,18 +66,53 @@ export default function PointBalanceForm({ contractId }: PointBalanceFormProps) 
   const [newYear, setNewYear] = useState(new Date().getFullYear());
   const [newType, setNewType] = useState<PointAllocationType>("current");
   const [newPoints, setNewPoints] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const handleBlur = (fieldName: string, value: string) => {
+    const error = validateField(fieldName, value);
+    setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+  };
+
+  const handleSelectChange = (value: string) => {
+    setNewType(value as PointAllocationType);
+    const error = validateField("allocationType", value);
+    setFieldErrors((prev) => ({ ...prev, allocationType: error }));
+  };
+
+  const validateAll = (): boolean => {
+    const errors: Record<string, string> = {};
+    errors.useYear = validateField("useYear", String(newYear));
+    errors.points = validateField("points", String(newPoints));
+    errors.allocationType = validateField("allocationType", newType);
+
+    const filtered: Record<string, string> = {};
+    for (const [k, v] of Object.entries(errors)) {
+      if (v) filtered[k] = v;
+    }
+    setFieldErrors(filtered);
+    return Object.keys(filtered).length === 0;
+  };
 
   const handleAdd = async () => {
-    await createBalance.mutateAsync({
-      contractId,
-      data: {
-        use_year: newYear,
-        allocation_type: newType,
-        points: newPoints,
-      },
-    });
-    setShowAddForm(false);
-    setNewPoints(0);
+    if (!validateAll()) return;
+
+    try {
+      await createBalance.mutateAsync({
+        contractId,
+        data: {
+          use_year: newYear,
+          allocation_type: newType,
+          points: newPoints,
+        },
+      });
+      setShowAddForm(false);
+      setNewPoints(0);
+      setFieldErrors({});
+    } catch (err) {
+      if (err instanceof ApiError && err.fields.length > 0) {
+        setFieldErrors(err.toFieldErrors());
+      }
+    }
   };
 
   if (!pointsData) return null;
@@ -68,7 +126,10 @@ export default function PointBalanceForm({ contractId }: PointBalanceFormProps) 
         <Button
           variant="outline"
           size="xs"
-          onClick={() => setShowAddForm(!showAddForm)}
+          onClick={() => {
+            setShowAddForm(!showAddForm);
+            setFieldErrors({});
+          }}
         >
           <PlusIcon className="size-3" />
           Add
@@ -84,16 +145,20 @@ export default function PointBalanceForm({ contractId }: PointBalanceFormProps) 
                 type="number"
                 value={newYear}
                 onChange={(e) => setNewYear(Number(e.target.value))}
+                onBlur={() => handleBlur("useYear", String(newYear))}
                 className="w-20 h-8 text-sm"
                 min={2020}
                 max={2035}
               />
+              {fieldErrors.useYear && (
+                <p className="text-xs text-destructive mt-1">{fieldErrors.useYear}</p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type</label>
               <Select
                 value={newType}
-                onValueChange={(v) => setNewType(v as PointAllocationType)}
+                onValueChange={handleSelectChange}
               >
                 <SelectTrigger className="w-28 h-8 text-sm">
                   <SelectValue />
@@ -106,6 +171,9 @@ export default function PointBalanceForm({ contractId }: PointBalanceFormProps) 
                   ))}
                 </SelectContent>
               </Select>
+              {fieldErrors.allocationType && (
+                <p className="text-xs text-destructive mt-1">{fieldErrors.allocationType}</p>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Points</label>
@@ -113,9 +181,13 @@ export default function PointBalanceForm({ contractId }: PointBalanceFormProps) 
                 type="number"
                 value={newPoints}
                 onChange={(e) => setNewPoints(Number(e.target.value))}
+                onBlur={() => handleBlur("points", String(newPoints))}
                 className="w-20 h-8 text-sm"
                 min={0}
               />
+              {fieldErrors.points && (
+                <p className="text-xs text-destructive mt-1">{fieldErrors.points}</p>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
@@ -125,7 +197,10 @@ export default function PointBalanceForm({ contractId }: PointBalanceFormProps) 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false);
+                setFieldErrors({});
+              }}
             >
               Cancel
             </Button>
