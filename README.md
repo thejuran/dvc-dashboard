@@ -2,7 +2,7 @@
 
 **A self-hosted web app for managing Disney Vacation Club points across multiple contracts.**
 
-![CI](https://github.com/thejuran/seedsync/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/thejuran/dvc-dashboard/actions/workflows/ci.yml/badge.svg)
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 <!-- TODO: Add screenshot of dashboard -->
@@ -48,8 +48,8 @@ The official DVC website doesn't provide cross-contract planning views. DVC Dash
 ## Quickstart
 
 ```bash
-git clone https://github.com/thejuran/seedsync.git
-cd seedsync
+git clone https://github.com/thejuran/dvc-dashboard.git
+cd dvc-dashboard
 cp .env.example .env
 docker compose up
 ```

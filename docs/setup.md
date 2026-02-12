@@ -5,7 +5,7 @@
 The fastest way to run DVC Dashboard. Requirements: [Docker](https://docs.docker.com/get-docker/) and Docker Compose.
 
 ```bash
-git clone https://github.com/thejuran/seedsync.git && cd seedsync
+git clone https://github.com/thejuran/dvc-dashboard.git && cd dvc-dashboard
 ```
 
 Optionally configure settings before starting:

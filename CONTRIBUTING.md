@@ -9,8 +9,8 @@ Thanks for considering contributing! This guide helps you get set up and submit 
 Clone and set up the backend:
 
 ```bash
-git clone https://github.com/thejuran/seedsync.git
-cd seedsync
+git clone https://github.com/thejuran/dvc-dashboard.git
+cd dvc-dashboard
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r backend/requirements-dev.txt
