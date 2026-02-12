@@ -55,10 +55,13 @@ async def test_create_reservation(client):
 
 @pytest.mark.asyncio
 async def test_create_reservation_nonexistent_contract(client):
-    """POST reservation for non-existent contract -> 404."""
+    """POST reservation for non-existent contract -> 404 with structured error."""
     payload = {**VALID_RESERVATION}
     resp = await client.post("/api/contracts/999/reservations", json=payload)
     assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["type"] == "NOT_FOUND"
+    assert "Contract not found" in body["error"]["message"]
 
 
 @pytest.mark.asyncio
@@ -73,22 +76,28 @@ async def test_create_reservation_ineligible_resort(client):
 
 @pytest.mark.asyncio
 async def test_create_reservation_checkout_before_checkin(client):
-    """POST reservation with check_out before check_in -> 422."""
+    """POST reservation with check_out before check_in -> 422 with structured error."""
     cid = await _create_contract(client)
     resp = await _create_reservation(
         client, cid, check_in="2026-03-20", check_out="2026-03-15"
     )
     assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"]["type"] == "VALIDATION_ERROR"
+    assert len(body["error"]["fields"]) > 0
 
 
 @pytest.mark.asyncio
 async def test_create_reservation_exceeds_14_nights(client):
-    """POST reservation exceeding 14 nights -> 422."""
+    """POST reservation exceeding 14 nights -> 422 with structured error."""
     cid = await _create_contract(client)
     resp = await _create_reservation(
         client, cid, check_in="2026-03-01", check_out="2026-03-20"
     )
     assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"]["type"] == "VALIDATION_ERROR"
+    assert len(body["error"]["fields"]) > 0
 
 
 @pytest.mark.asyncio
@@ -196,6 +205,9 @@ async def test_delete_reservation(client):
 
     resp = await client.get(f"/api/reservations/{rid}")
     assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["type"] == "NOT_FOUND"
+    assert "Reservation not found" in body["error"]["message"]
 
 
 # --- Edge cases ---
@@ -301,6 +313,9 @@ async def test_preview_invalid_contract(client):
         "check_out": "2026-01-15",
     })
     assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["type"] == "NOT_FOUND"
+    assert "Contract not found" in body["error"]["message"]
 
 
 @pytest.mark.asyncio
@@ -362,3 +377,33 @@ async def test_preview_booking_windows_fields(client):
     assert isinstance(bw["any_resort_window_open"], bool)
     assert isinstance(bw["days_until_any_window"], int)
     assert isinstance(bw["is_home_resort"], bool)
+
+
+# --- Additional structured-error validation tests ---
+
+
+@pytest.mark.asyncio
+async def test_create_reservation_ineligible_resort_structured(client):
+    """Resale contract at polynesian trying to book riviera -> 422 with field 'resort'."""
+    cid = await _create_contract(client)
+    resp = await _create_reservation(client, cid, resort="riviera")
+    assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"]["type"] == "VALIDATION_ERROR"
+    field_names = [f["field"] for f in body["error"]["fields"]]
+    assert "resort" in field_names
+
+
+@pytest.mark.asyncio
+async def test_preview_nonexistent_contract(client):
+    """POST /api/reservations/preview with non-existent contract_id -> 404."""
+    resp = await client.post("/api/reservations/preview", json={
+        "contract_id": 99999,
+        "resort": "polynesian",
+        "room_key": "deluxe_studio_standard",
+        "check_in": "2026-03-15",
+        "check_out": "2026-03-18",
+    })
+    assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["type"] == "NOT_FOUND"

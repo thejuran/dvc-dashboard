@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.api.errors import ValidationError
 from backend.db.database import get_db
 from backend.engine.availability import get_all_contracts_availability
 from backend.models.contract import Contract
@@ -30,6 +31,16 @@ async def get_availability(
 
     Plus a summary with grand totals across all contracts.
     """
+    # Validate target_date is within a reasonable range
+    if target_date.year < 2020 or target_date.year > 2040:
+        raise ValidationError(
+            "Validation failed",
+            fields=[{
+                "field": "target_date",
+                "issue": "Year must be between 2020 and 2040",
+            }],
+        )
+
     # Load all contracts
     result = await db.execute(select(Contract))
     contracts = result.scalars().all()

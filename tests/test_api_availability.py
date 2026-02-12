@@ -92,9 +92,12 @@ async def test_one_contract_with_reservation(client):
 
 @pytest.mark.asyncio
 async def test_missing_target_date(client):
-    """Missing target_date param -> 422."""
+    """Missing target_date param -> 422 with structured error."""
     resp = await client.get("/api/availability")
     assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"]["type"] == "VALIDATION_ERROR"
+    assert len(body["error"]["fields"]) > 0
 
 
 # --- Multi-contract tests ---
@@ -214,3 +217,30 @@ async def test_full_e2e_scenario(client):
     assert data["summary"]["total_points"] == 405
     assert data["summary"]["total_committed"] == 185
     assert data["summary"]["total_available"] == 220
+
+
+# --- Additional validation edge case tests ---
+
+
+@pytest.mark.asyncio
+async def test_availability_no_contracts_structured(client):
+    """Empty DB -> 200 with empty contracts list and summary all zeros."""
+    resp = await client.get("/api/availability?target_date=2026-03-15")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["contracts"] == []
+    assert data["summary"]["total_contracts"] == 0
+    assert data["summary"]["total_available"] == 0
+    assert data["summary"]["total_points"] == 0
+    assert data["summary"]["total_committed"] == 0
+
+
+@pytest.mark.asyncio
+async def test_availability_missing_target_date_fields(client):
+    """Missing target_date -> 422 with field info."""
+    resp = await client.get("/api/availability")
+    assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"]["type"] == "VALIDATION_ERROR"
+    field_names = [f["field"] for f in body["error"]["fields"]]
+    assert "target_date" in field_names

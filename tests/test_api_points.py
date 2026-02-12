@@ -90,7 +90,7 @@ async def test_get_contract_points_grouped(client):
 
 @pytest.mark.asyncio
 async def test_duplicate_point_balance_returns_409(client):
-    """POST duplicate (same contract + use_year + allocation_type) -> 409."""
+    """POST duplicate (same contract + use_year + allocation_type) -> 409 with structured error."""
     contract_id = await _create_contract(client)
 
     resp1 = await client.post(
@@ -104,6 +104,9 @@ async def test_duplicate_point_balance_returns_409(client):
         json={"use_year": 2026, "allocation_type": "current", "points": 100},
     )
     assert resp2.status_code == 409
+    body = resp2.json()
+    assert body["error"]["type"] == "CONFLICT"
+    assert "already exists" in body["error"]["message"]
 
 
 @pytest.mark.asyncio
@@ -145,23 +148,30 @@ async def test_delete_point_balance(client):
 
 @pytest.mark.asyncio
 async def test_create_point_balance_nonexistent_contract(client):
-    """POST point balance for non-existent contract -> 404."""
+    """POST point balance for non-existent contract -> 404 with structured error."""
     resp = await client.post(
         "/api/contracts/9999/points",
         json={"use_year": 2026, "allocation_type": "current", "points": 160},
     )
     assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["type"] == "NOT_FOUND"
+    assert "Contract not found" in body["error"]["message"]
 
 
 @pytest.mark.asyncio
 async def test_banked_points_cannot_exceed_annual(client):
-    """Banked points exceeding annual_points -> 422."""
+    """Banked points exceeding annual_points -> 422 with structured error."""
     contract_id = await _create_contract(client)
     resp = await client.post(
         f"/api/contracts/{contract_id}/points",
         json={"use_year": 2026, "allocation_type": "banked", "points": 200},
     )
     assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"]["type"] == "VALIDATION_ERROR"
+    field_names = [f["field"] for f in body["error"]["fields"]]
+    assert "points" in field_names
 
 
 # --- Timeline Tests ---
@@ -254,3 +264,58 @@ def test_build_use_year_timeline_structure():
     assert isinstance(tl["banking_deadline_passed"], bool)
     assert isinstance(tl["days_until_banking_deadline"], int)
     assert isinstance(tl["days_until_expiration"], int)
+
+
+# --- Additional structured-error validation tests ---
+
+
+@pytest.mark.asyncio
+async def test_create_duplicate_point_balance_structured(client):
+    """POST duplicate -> 409 CONFLICT with structured error format."""
+    contract_id = await _create_contract(client)
+    await client.post(
+        f"/api/contracts/{contract_id}/points",
+        json={"use_year": 2026, "allocation_type": "current", "points": 100},
+    )
+    resp = await client.post(
+        f"/api/contracts/{contract_id}/points",
+        json={"use_year": 2026, "allocation_type": "current", "points": 50},
+    )
+    assert resp.status_code == 409
+    body = resp.json()
+    assert body["error"]["type"] == "CONFLICT"
+
+
+@pytest.mark.asyncio
+async def test_create_banked_exceeds_annual_structured(client):
+    """Banked points > annual_points -> 422 with field 'points'."""
+    contract_id = await _create_contract(client)
+    resp = await client.post(
+        f"/api/contracts/{contract_id}/points",
+        json={"use_year": 2026, "allocation_type": "banked", "points": 999},
+    )
+    assert resp.status_code == 422
+    body = resp.json()
+    assert body["error"]["type"] == "VALIDATION_ERROR"
+    field_names = [f["field"] for f in body["error"]["fields"]]
+    assert "points" in field_names
+
+
+@pytest.mark.asyncio
+async def test_update_nonexistent_balance(client):
+    """PUT /api/points/99999 -> 404 with structured error."""
+    resp = await client.put("/api/points/99999", json={"points": 100})
+    assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["type"] == "NOT_FOUND"
+    assert "Point balance not found" in body["error"]["message"]
+
+
+@pytest.mark.asyncio
+async def test_delete_nonexistent_balance(client):
+    """DELETE /api/points/99999 -> 404 with structured error."""
+    resp = await client.delete("/api/points/99999")
+    assert resp.status_code == 404
+    body = resp.json()
+    assert body["error"]["type"] == "NOT_FOUND"
+    assert "Point balance not found" in body["error"]["message"]

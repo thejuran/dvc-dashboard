@@ -52,13 +52,13 @@ async def evaluate_scenario(
     contract_map = {c.id: c for c in all_contracts}
 
     # 3. Validate resort eligibility for each hypothetical booking
-    for hb in data.hypothetical_bookings:
+    for idx, hb in enumerate(data.hypothetical_bookings):
         contract = contract_map.get(hb.contract_id)
         if not contract:
             raise ValidationError(
                 "Validation failed",
                 fields=[{
-                    "field": "contract_id",
+                    "field": f"hypothetical_bookings[{idx}].contract_id",
                     "issue": f"Contract {hb.contract_id} not found",
                 }],
             )
@@ -67,7 +67,7 @@ async def evaluate_scenario(
             raise ValidationError(
                 "Validation failed",
                 fields=[{
-                    "field": "resort",
+                    "field": f"hypothetical_bookings[{idx}].resort",
                     "issue": (
                         f"Resort '{hb.resort}' is not eligible for contract {hb.contract_id} "
                         f"({contract.purchase_type} at {contract.home_resort}). "
