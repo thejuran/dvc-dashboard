@@ -37,7 +37,7 @@ export default function AvailabilityPage() {
           type="date"
           value={targetDate}
           onChange={(e) => setTargetDate(e.target.value)}
-          className="w-48 mt-1"
+          className="w-full sm:w-48 mt-1"
         />
       </div>
 

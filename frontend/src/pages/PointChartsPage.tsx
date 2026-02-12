@@ -120,11 +120,11 @@ export default function PointChartsPage() {
       </div>
 
       {/* Chart selector */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4 mb-6">
         <div className="space-y-1">
           <label className="text-sm font-medium">Resort</label>
           <Select value={selectedResort} onValueChange={setSelectedResort}>
-            <SelectTrigger className="w-[240px]">
+            <SelectTrigger className="w-full sm:w-[240px]">
               <SelectValue placeholder="Select resort..." />
             </SelectTrigger>
             <SelectContent>
@@ -139,7 +139,7 @@ export default function PointChartsPage() {
         <div className="space-y-1">
           <label className="text-sm font-medium">Year</label>
           <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger className="w-full sm:w-[120px]">
               <SelectValue placeholder="Year" />
             </SelectTrigger>
             <SelectContent>
@@ -155,7 +155,7 @@ export default function PointChartsPage() {
 
       {/* Tabs */}
       <div className="border-b mb-6">
-        <div className="flex gap-0">
+        <div className="flex gap-0 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.id}

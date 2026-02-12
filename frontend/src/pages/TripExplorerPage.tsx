@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { Search } from "lucide-react";
 import { useTripExplorer } from "../hooks/useTripExplorer";
 import TripExplorerForm from "../components/TripExplorerForm";
 import TripExplorerResults from "../components/TripExplorerResults";
+import ErrorAlert from "../components/ErrorAlert";
+import EmptyState from "../components/EmptyState";
 
 export default function TripExplorerPage() {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
 
-  const { data, isLoading, error } = useTripExplorer(
+  const { data, isLoading, error, refetch } = useTripExplorer(
     checkIn || null,
     checkOut || null
   );
@@ -32,19 +35,17 @@ export default function TripExplorerPage() {
       />
 
       {error && (
-        <p className="text-destructive">
-          Failed to search: {error.message}
-        </p>
+        <ErrorAlert message={error.message} onRetry={() => refetch()} />
       )}
 
       {data && <TripExplorerResults data={data} checkIn={checkIn} checkOut={checkOut} />}
 
       {showPrompt && (
-        <div className="text-center py-12 border rounded-lg bg-muted/30">
-          <p className="text-muted-foreground">
-            Select check-in and check-out dates to see what you can book.
-          </p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title="Ready to explore"
+          description="Select check-in and check-out dates above to see what you can book."
+        />
       )}
     </div>
   );

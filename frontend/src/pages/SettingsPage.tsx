@@ -7,6 +7,8 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import ErrorAlert from "../components/ErrorAlert";
 
 type AppSetting = { key: string; value: string };
 
@@ -17,6 +19,7 @@ export default function SettingsPage() {
     data: settings,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["settings"],
     queryFn: () => api.get<AppSetting[]>("/settings"),
@@ -55,14 +58,10 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {isLoading && (
-        <p className="text-muted-foreground">Loading settings...</p>
-      )}
+      {isLoading && <LoadingSkeleton variant="detail" />}
 
       {error && (
-        <p className="text-destructive">
-          Failed to load settings: {(error as Error).message}
-        </p>
+        <ErrorAlert message={error.message} onRetry={() => refetch()} />
       )}
 
       {settings && (
@@ -75,7 +74,7 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               {options.map((opt) => (
                 <button
                   key={opt.value}

@@ -49,7 +49,7 @@ export default function ReservationsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Reservations</h2>
           <p className="text-sm text-muted-foreground">
@@ -63,7 +63,7 @@ export default function ReservationsPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-40">
             <SelectValue />

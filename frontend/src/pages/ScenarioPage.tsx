@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FlaskConical, RotateCcw } from "lucide-react";
 import { useScenarioStore } from "@/store/useScenarioStore";
 import { useScenarioEvaluation } from "@/hooks/useScenarioEvaluation";
@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import ScenarioBookingForm from "@/components/ScenarioBookingForm";
 import ScenarioBookingList from "@/components/ScenarioBookingList";
 import ScenarioComparison from "@/components/ScenarioComparison";
+import EmptyState from "@/components/EmptyState";
 
 export default function ScenarioPage() {
+  const navigate = useNavigate();
   const bookings = useScenarioStore((s) => s.bookings);
   const clearAll = useScenarioStore((s) => s.clearAll);
   const { data: contracts, isLoading: contractsLoading } = useContracts();
@@ -19,7 +21,7 @@ export default function ScenarioPage() {
     return (
       <div>
         <div className="mb-6 flex items-center gap-3">
-          <FlaskConical className="size-6 text-muted-foreground" />
+          <FlaskConical className="size-6 text-muted-foreground shrink-0" />
           <div>
             <h2 className="text-2xl font-bold tracking-tight">
               What-If Scenarios
@@ -29,17 +31,12 @@ export default function ScenarioPage() {
             </p>
           </div>
         </div>
-        <div className="rounded-md border p-8 text-center">
-          <p className="text-muted-foreground">
-            No contracts found. Add contracts first to model scenarios.
-          </p>
-          <Link
-            to="/contracts"
-            className="mt-2 inline-block text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-          >
-            Go to Contracts
-          </Link>
-        </div>
+        <EmptyState
+          icon={FlaskConical}
+          title="No contracts found"
+          description="Add contracts first to model scenarios."
+          action={{ label: "Go to Contracts", onClick: () => navigate("/contracts") }}
+        />
       </div>
     );
   }
@@ -47,9 +44,9 @@ export default function ScenarioPage() {
   return (
     <div>
       {/* Page header */}
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
-          <FlaskConical className="size-6 text-muted-foreground" />
+          <FlaskConical className="size-6 text-muted-foreground shrink-0" />
           <div>
             <h2 className="text-2xl font-bold tracking-tight">
               What-If Scenarios
