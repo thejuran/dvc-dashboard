@@ -49,11 +49,12 @@ Plans:
   3. All pages render correctly and are usable on a 375px mobile viewport and tablet
   4. Pages with no data (no contracts, no reservations, no point charts) show helpful empty states with guidance on what to do
   5. No credentials, secrets, or API keys exist anywhere in committed code, and all dependencies are pinned with no known vulnerabilities
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 09-01: TBD
-- [ ] 09-02: TBD
+- [ ] 09-01-PLAN.md -- Loading skeletons, error alerts with retry, and empty states across all pages
+- [ ] 09-02-PLAN.md -- Mobile responsive layout with hamburger sidebar and viewport fixes
+- [ ] 09-03-PLAN.md -- Secrets audit, .gitignore hardening, dependency pinning and vulnerability audit
 
 #### Phase 10: Open Source & Documentation
 **Goal**: A stranger can discover the project on GitHub, understand what it does, clone it, run it, and contribute back -- all from the repo alone
@@ -76,7 +77,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 8. Code Hardening | v1.2 | 5/5 | ✓ Complete | 2026-02-12 |
-| 9. UX & Security Polish | v1.2 | 0/TBD | Not started | - |
+| 9. UX & Security Polish | v1.2 | 0/3 | Not started | - |
 | 10. Open Source & Documentation | v1.2 | 0/TBD | Not started | - |
 
 ---
