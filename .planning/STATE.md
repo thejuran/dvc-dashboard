@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 8 - Code Hardening (v1.2)
+**Current focus:** Phase 9 - UX & Security Polish (v1.2)
 
 ## Current Position
 
-Phase: 8 of 10 (Code Hardening)
-Plan: 5 of 5 in current phase
-Status: Phase complete
-Last activity: 2026-02-12 — Completed 08-05 (Lint & Dead Code Cleanup)
+Phase: 9 of 10 (UX & Security Polish)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-02-12 — Phase 8 verified and complete (5/5 plans, 21/21 must-haves)
 
-Progress: [██████████] 100%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (across v1.0 + v1.1)
+- Total plans completed: 23 (across v1.0 + v1.1 + v1.2 phase 8)
 - Average duration: carried from prior milestones
 - Total execution time: carried from prior milestones
 
@@ -69,6 +69,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-04-PLAN.md (Expanded Test Coverage) -- 38 new tests, 185 -> 223 total
+Stopped at: Phase 8 complete and verified (21/21 must-haves passed)
 Resume file: None
-Next: Phase 9 (UX & Security Polish) or /gsd:new-milestone
+Next: /gsd:plan-phase 9

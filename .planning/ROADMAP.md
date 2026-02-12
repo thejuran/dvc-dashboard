@@ -14,7 +14,7 @@
 
 ### Phases
 
-- [ ] **Phase 8: Code Hardening** - Structured errors, input validation, error boundaries, test coverage, cleanup
+- [x] **Phase 8: Code Hardening** - Structured errors, input validation, error boundaries, test coverage, cleanup
 - [ ] **Phase 9: UX & Security Polish** - Loading states, error messages, mobile responsiveness, secrets audit, dependency audit
 - [ ] **Phase 10: Open Source & Documentation** - Public repo, LICENSE, README, CI/CD, setup guide, architecture docs, API reference
 
@@ -33,11 +33,11 @@
 **Plans**: 5 plans
 
 Plans:
-- [ ] 08-01-PLAN.md -- Backend structured error infrastructure + frontend API layer update
-- [ ] 08-02-PLAN.md -- Backend input validation hardening across all endpoints
-- [ ] 08-03-PLAN.md -- Frontend error boundaries + form validation with inline errors
-- [ ] 08-04-PLAN.md -- Test coverage expansion: edge cases + integration tests
-- [ ] 08-05-PLAN.md -- Lint cleanup + dead code removal (ruff + eslint)
+- [x] 08-01-PLAN.md -- Backend structured error infrastructure + frontend API layer update
+- [x] 08-02-PLAN.md -- Backend input validation hardening across all endpoints
+- [x] 08-03-PLAN.md -- Frontend error boundaries + form validation with inline errors
+- [x] 08-04-PLAN.md -- Test coverage expansion: edge cases + integration tests
+- [x] 08-05-PLAN.md -- Lint cleanup + dead code removal (ruff + eslint)
 
 #### Phase 9: UX & Security Polish
 **Goal**: The app feels polished on any device and contains no security liabilities that would embarrass an open-source release
@@ -75,10 +75,10 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 8. Code Hardening | v1.2 | 0/5 | Planned | - |
+| 8. Code Hardening | v1.2 | 5/5 | ✓ Complete | 2026-02-12 |
 | 9. UX & Security Polish | v1.2 | 0/TBD | Not started | - |
 | 10. Open Source & Documentation | v1.2 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-11*
-*Last updated: 2026-02-11*
+*Last updated: 2026-02-12*
