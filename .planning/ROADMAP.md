@@ -15,7 +15,7 @@
 ### Phases
 
 - [x] **Phase 8: Code Hardening** - Structured errors, input validation, error boundaries, test coverage, cleanup
-- [ ] **Phase 9: UX & Security Polish** - Loading states, error messages, mobile responsiveness, secrets audit, dependency audit
+- [x] **Phase 9: UX & Security Polish** - Loading states, error messages, mobile responsiveness, secrets audit, dependency audit
 - [ ] **Phase 10: Open Source & Documentation** - Public repo, LICENSE, README, CI/CD, setup guide, architecture docs, API reference
 
 ### Phase Details
@@ -52,9 +52,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01-PLAN.md -- Loading skeletons, error alerts with retry, and empty states across all pages
-- [ ] 09-02-PLAN.md -- Mobile responsive layout with hamburger sidebar and viewport fixes
-- [ ] 09-03-PLAN.md -- Secrets audit, .gitignore hardening, dependency pinning and vulnerability audit
+- [x] 09-01-PLAN.md -- Loading skeletons, error alerts with retry, and empty states across all pages
+- [x] 09-02-PLAN.md -- Mobile responsive layout with hamburger sidebar and viewport fixes
+- [x] 09-03-PLAN.md -- Secrets audit, .gitignore hardening, dependency pinning and vulnerability audit
 
 #### Phase 10: Open Source & Documentation
 **Goal**: A stranger can discover the project on GitHub, understand what it does, clone it, run it, and contribute back -- all from the repo alone
@@ -66,19 +66,20 @@ Plans:
   3. CONTRIBUTING.md documents dev setup, code style, and PR process so a contributor knows how to submit changes
   4. GitHub Actions CI runs tests, lint, and Docker build on every PR -- and it passes on the current codebase
   5. Architecture document and API reference exist so a developer can understand the system structure and all REST endpoints without reading source code
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 10-01: TBD
-- [ ] 10-02: TBD
+- [ ] 10-01-PLAN.md -- GPL v3 LICENSE, README with features/quickstart, CONTRIBUTING.md
+- [ ] 10-02-PLAN.md -- GitHub Actions CI pipeline (tests, lint, Docker build)
+- [ ] 10-03-PLAN.md -- Technical documentation (setup guide, architecture, API reference)
 
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 8. Code Hardening | v1.2 | 5/5 | ✓ Complete | 2026-02-12 |
-| 9. UX & Security Polish | v1.2 | 0/3 | Not started | - |
-| 10. Open Source & Documentation | v1.2 | 0/TBD | Not started | - |
+| 9. UX & Security Polish | v1.2 | 3/3 | ✓ Complete | 2026-02-12 |
+| 10. Open Source & Documentation | v1.2 | 0/3 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-11*
