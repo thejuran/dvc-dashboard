@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** Phase 6 in progress -- What-If Scenarios
+**Current focus:** Phase 7 complete -- Seasonal Cost Heatmap
 
 ## Current Position
 
-Phase: 6 of 7 (What-If Scenarios)
-Plan: 3/3 complete
+Phase: 7 of 7 (Seasonal Cost Heatmap)
+Plan: 1/1 complete
 Status: Phase complete
-Last activity: 2026-02-11 -- Completed 06-03 (scenario UI workspace)
+Last activity: 2026-02-11 -- Completed 07-01 (seasonal cost heatmap)
 
-Progress: [███████░░░] 70%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9 (v1.1)
-- Average duration: 3m 16s
-- Total execution time: 29m 12s
+- Total plans completed: 10 (v1.1)
+- Average duration: 3m 6s
+- Total execution time: 31m 0s
 
 **By Phase:**
 
@@ -30,6 +30,7 @@ Progress: [███████░░░] 70%
 | 4     | 2     | 9m 48s | 4m 54s |
 | 5     | 3     | 11m 6s | 3m 42s  |
 | 6     | 3     | 8m 18s | 2m 46s  |
+| 7     | 1     | 1m 48s | 1m 48s  |
 
 *Updated after each plan completion*
 
@@ -86,6 +87,11 @@ Phase 6 decisions:
 - 10 booking cap with visual feedback at limit
 - Clear All button in page header for quick reset
 
+Phase 7 decisions:
+- Extract heatColor to shared lib/utils rather than duplicating across components
+- Client-side daily cost computation via useMemo (no new API endpoint)
+- Room key auto-resets on resort switch via useEffect watching rooms prop
+
 ### Pending Todos
 
 None.
@@ -99,6 +105,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Completed 06-03-PLAN.md (Phase 6 complete)
+Stopped at: Completed 07-01-PLAN.md (Phase 7 complete -- all phases done)
 Resume file: None
-Next: Phase 7 planning or next milestone
+Next: /gsd:new-milestone for v2.0 or v1.3
