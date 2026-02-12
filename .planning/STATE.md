@@ -55,6 +55,8 @@ Key architectural decisions carrying forward:
 - _strip_str whitespace sanitization on all user-facing string fields in Pydantic schemas
 - Numeric caps: points le=4000, string limits (name 100, notes 500, confirmation 50)
 - Indexed field names in scenario validation: hypothetical_bookings[N].field
+- Engine edge case tests are pure-function (no DB, no async) for fast execution
+- All API error tests verify structured error format (type + fields), not just status codes
 
 ### Pending Todos
 
@@ -67,6 +69,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-02-PLAN.md (Input Validation Hardening) -- retroactive SUMMARY created
+Stopped at: Completed 08-04-PLAN.md (Expanded Test Coverage) -- 38 new tests, 185 -> 223 total
 Resume file: None
 Next: Phase 9 (UX & Security Polish) or /gsd:new-milestone
