@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useContracts, useResorts } from "@/hooks/useContracts";
-import { useChartRooms } from "@/hooks/usePointCharts";
+import { useAvailableCharts, useChartRooms } from "@/hooks/usePointCharts";
 import { useScenarioStore } from "@/store/useScenarioStore";
 
 interface ScenarioBookingFormProps {
@@ -24,6 +24,7 @@ export default function ScenarioBookingForm({
 }: ScenarioBookingFormProps) {
   const { data: contracts } = useContracts();
   const { data: resorts } = useResorts();
+  const { data: availableCharts } = useAvailableCharts();
 
   const [selectedContractId, setSelectedContractId] = useState<string>("");
   const [selectedResort, setSelectedResort] = useState<string>("");
@@ -41,12 +42,19 @@ export default function ScenarioBookingForm({
     [contracts, selectedContractId]
   );
 
+  const chartsResortSet = useMemo(() => {
+    if (!availableCharts) return new Set<string>();
+    return new Set(availableCharts.map((c) => c.resort));
+  }, [availableCharts]);
+
   const eligibleResorts = useMemo(() => {
     if (!selectedContract || !resorts) return [];
-    return resorts.filter((r) =>
-      selectedContract.eligible_resorts.includes(r.slug)
+    return resorts.filter(
+      (r) =>
+        selectedContract.eligible_resorts.includes(r.slug) &&
+        chartsResortSet.has(r.slug)
     );
-  }, [selectedContract, resorts]);
+  }, [selectedContract, resorts, chartsResortSet]);
 
   const roomKeys = useMemo(() => {
     if (!chartRoomsData?.rooms) return [];
