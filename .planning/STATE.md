@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 8 of 10 (Code Hardening)
-Plan: 4 of 5 in current phase
-Status: Executing
-Last activity: 2026-02-12 — Completed 08-01 (Structured Error Infrastructure)
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-02-12 — Completed 08-05 (Lint & Dead Code Cleanup)
 
-Progress: [████░░░░░░] 40%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -27,7 +27,7 @@ Progress: [████░░░░░░] 40%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 8. Code Hardening | 2/5 | 11min | 5.5min |
+| 8. Code Hardening | 5/5 | 36min | 7.2min |
 | 9. UX & Security Polish | 0/TBD | - | - |
 | 10. Open Source & Docs | 0/TBD | - | - |
 
@@ -49,6 +49,9 @@ Key architectural decisions carrying forward:
 - ApiError class in api.ts for structured field-level error propagation from backend to forms
 - Per-section error boundaries (not app-level) for crash isolation
 - Blur-triggered form validation with inline red text pattern across all form components
+- Ruff lint config in pyproject.toml (E, W, F, I, UP, B, SIM, RUF rules; B008 ignored for FastAPI)
+- ESLint: set-state-in-effect disabled globally, react-refresh off for shadcn ui/ files
+- StrEnum for all Python enums (Python 3.12+), explicit re-exports in models __init__.py
 
 ### Pending Todos
 
@@ -61,6 +64,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-01-PLAN.md (Structured Error Infrastructure)
+Stopped at: Completed 08-05-PLAN.md (Lint & Dead Code Cleanup) -- Phase 8 complete
 Resume file: None
-Next: Execute 08-02 (wave 1 remaining), then 08-04, 08-05 (wave 2)
+Next: Phase 9 (UX & Security Polish) or /gsd:new-milestone
