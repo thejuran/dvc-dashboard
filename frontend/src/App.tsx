@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Layout from "./components/Layout";
+import ErrorBoundary from "./components/ErrorBoundary";
 import DashboardPage from "./pages/DashboardPage";
 import ContractsPage from "./pages/ContractsPage";
 import PointChartsPage from "./pages/PointChartsPage";
@@ -25,14 +26,14 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/trip-explorer" element={<TripExplorerPage />} />
-            <Route path="/scenarios" element={<ScenarioPage />} />
-            <Route path="/contracts" element={<ContractsPage />} />
-            <Route path="/availability" element={<AvailabilityPage />} />
-            <Route path="/reservations" element={<ReservationsPage />} />
-            <Route path="/point-charts" element={<PointChartsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/" element={<ErrorBoundary section="Dashboard"><DashboardPage /></ErrorBoundary>} />
+            <Route path="/trip-explorer" element={<ErrorBoundary section="Trip Explorer"><TripExplorerPage /></ErrorBoundary>} />
+            <Route path="/scenarios" element={<ErrorBoundary section="Scenarios"><ScenarioPage /></ErrorBoundary>} />
+            <Route path="/contracts" element={<ErrorBoundary section="Contracts"><ContractsPage /></ErrorBoundary>} />
+            <Route path="/availability" element={<ErrorBoundary section="Availability"><AvailabilityPage /></ErrorBoundary>} />
+            <Route path="/reservations" element={<ErrorBoundary section="Reservations"><ReservationsPage /></ErrorBoundary>} />
+            <Route path="/point-charts" element={<ErrorBoundary section="Point Charts"><PointChartsPage /></ErrorBoundary>} />
+            <Route path="/settings" element={<ErrorBoundary section="Settings"><SettingsPage /></ErrorBoundary>} />
           </Route>
         </Routes>
       </BrowserRouter>
