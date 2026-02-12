@@ -213,3 +213,82 @@ def test_cancelled_reservation_excluded_from_baseline():
     # Only the confirmed 30-point reservation should be committed
     assert cr["baseline"]["committed_points"] == 30
     assert cr["baseline"]["available_points"] == 200 - 30
+
+
+# --- Additional edge case tests ---
+
+
+def test_scenario_no_bookings():
+    """Evaluate with empty hypothetical list -> baseline == scenario."""
+    contracts = [_make_contract()]
+    balances = [_make_balance()]
+    reservations = [
+        {"contract_id": 1, "check_in": date(2025, 5, 10), "points_cost": 30, "status": "confirmed"},
+    ]
+
+    result = compute_scenario_impact(contracts, balances, reservations, [], date(2026, 1, 1))
+
+    cr = result["contracts"][0]
+    assert cr["baseline"]["available_points"] == cr["scenario"]["available_points"]
+    assert cr["baseline"]["committed_points"] == cr["scenario"]["committed_points"]
+    assert result["summary"]["total_impact"] == 0
+
+
+def test_scenario_multiple_contracts():
+    """Two contracts, bookings spread across both."""
+    contracts = [
+        _make_contract(id=1, home_resort="polynesian", name="Poly"),
+        _make_contract(id=2, home_resort="polynesian", name="Poly 2", annual_points=300),
+    ]
+    balances = [
+        _make_balance(contract_id=1, points=200),
+        _make_balance(contract_id=2, points=300),
+    ]
+    reservations = []
+    hypotheticals = [
+        {
+            "contract_id": 1,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": date(2026, 1, 12),
+            "check_out": date(2026, 1, 15),  # 42 pts
+        },
+        {
+            "contract_id": 2,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": date(2026, 1, 19),
+            "check_out": date(2026, 1, 22),  # 42 pts
+        },
+    ]
+
+    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+
+    assert len(result["contracts"]) == 2
+    assert len(result["resolved_bookings"]) == 2
+    assert result["summary"]["total_impact"] == 84
+    assert result["summary"]["baseline_available"] == 500
+    assert result["summary"]["scenario_available"] == 500 - 84
+
+
+def test_scenario_all_points_consumed():
+    """Scenario that uses all available points -> scenario_available = 0."""
+    contracts = [_make_contract(annual_points=42)]  # Exactly enough for 3 weekday nights
+    balances = [_make_balance(points=42)]
+    reservations = []
+    hypotheticals = [
+        {
+            "contract_id": 1,
+            "resort": "polynesian",
+            "room_key": "deluxe_studio_standard",
+            "check_in": date(2026, 1, 12),
+            "check_out": date(2026, 1, 15),  # 3 weekday nights = 42 pts
+        },
+    ]
+
+    result = compute_scenario_impact(contracts, balances, reservations, hypotheticals, date(2026, 1, 1))
+
+    cr = result["contracts"][0]
+    assert cr["baseline"]["available_points"] == 42
+    assert cr["scenario"]["available_points"] == 0
+    assert result["summary"]["total_impact"] == 42

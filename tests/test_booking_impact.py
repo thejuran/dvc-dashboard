@@ -187,3 +187,89 @@ def test_banking_warning_no_warning_when_covered_by_non_current():
     # Cost of 50 <= non-bankable portion (300 - 200 = 100), no warning
     result = compute_banking_warning(contract, before_availability, 50)
     assert result is None
+
+
+# --- Additional edge case tests ---
+
+
+def test_booking_impact_preview_full_flow():
+    """Full flow: contract with balances -> compute impact -> verify before/after snapshots."""
+    contract = {"id": 1, "use_year_month": 2, "annual_points": 200}
+    point_balances = [
+        {"contract_id": 1, "use_year": 2025, "allocation_type": "current", "points": 200},
+        {"contract_id": 1, "use_year": 2025, "allocation_type": "banked", "points": 50},
+    ]
+    reservations = [
+        {"contract_id": 1, "check_in": date(2025, 5, 10), "points_cost": 30, "status": "confirmed"},
+    ]
+
+    result = compute_booking_impact(
+        contract=contract,
+        point_balances=point_balances,
+        reservations=reservations,
+        proposed_resort="polynesian",
+        proposed_room_key="deluxe_studio_standard",
+        proposed_check_in=date(2026, 1, 12),
+        proposed_check_out=date(2026, 1, 15),
+    )
+
+    assert "error" not in result
+    # Before: 200 + 50 = 250 total, 30 committed, 220 available
+    assert result["before"]["total_points"] == 250
+    assert result["before"]["committed_points"] == 30
+    assert result["before"]["available_points"] == 220
+    # After: same total, committed += points_delta
+    assert result["after"]["total_points"] == 250
+    assert result["after"]["committed_points"] == 30 + result["points_delta"]
+    assert result["after"]["available_points"] == 220 - result["points_delta"]
+    # Stay cost verified
+    assert result["stay_cost"]["num_nights"] == 3
+    assert result["points_delta"] > 0
+
+
+def test_booking_impact_no_balances():
+    """Contract with 0 balances -> before.available = 0."""
+    contract = {"id": 1, "use_year_month": 2, "annual_points": 200}
+
+    result = compute_booking_impact(
+        contract=contract,
+        point_balances=[],
+        reservations=[],
+        proposed_resort="polynesian",
+        proposed_room_key="deluxe_studio_standard",
+        proposed_check_in=date(2026, 1, 12),
+        proposed_check_out=date(2026, 1, 15),
+    )
+
+    assert "error" not in result
+    assert result["before"]["total_points"] == 0
+    assert result["before"]["available_points"] == 0
+    # After: total still 0, committed = cost, available clamped to 0
+    assert result["after"]["total_points"] == 0
+    assert result["after"]["available_points"] == 0
+
+
+def test_booking_impact_all_points_committed():
+    """All points used by reservations, new booking -> after.available = 0."""
+    contract = {"id": 1, "use_year_month": 2, "annual_points": 200}
+    point_balances = [
+        {"contract_id": 1, "use_year": 2025, "allocation_type": "current", "points": 50},
+    ]
+    # Existing reservation consuming all 50 points
+    reservations = [
+        {"contract_id": 1, "check_in": date(2025, 5, 10), "points_cost": 50, "status": "confirmed"},
+    ]
+
+    result = compute_booking_impact(
+        contract=contract,
+        point_balances=point_balances,
+        reservations=reservations,
+        proposed_resort="polynesian",
+        proposed_room_key="deluxe_studio_standard",
+        proposed_check_in=date(2026, 1, 12),
+        proposed_check_out=date(2026, 1, 15),
+    )
+
+    assert "error" not in result
+    assert result["before"]["available_points"] == 0
+    assert result["after"]["available_points"] == 0  # clamped to 0
