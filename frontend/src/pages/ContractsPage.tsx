@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContracts } from "../hooks/useContracts";
 import ContractCard from "../components/ContractCard";
 import ContractFormDialog from "../components/ContractFormDialog";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import ErrorAlert from "../components/ErrorAlert";
+import EmptyState from "../components/EmptyState";
 import type { ContractWithDetails } from "../types";
 
 export default function ContractsPage() {
-  const { data: contracts, isLoading, error } = useContracts();
+  const { data: contracts, isLoading, error, refetch } = useContracts();
   const [formOpen, setFormOpen] = useState(false);
   const [editContract, setEditContract] = useState<ContractWithDetails | null>(
     null
@@ -38,30 +41,19 @@ export default function ContractsPage() {
         </Button>
       </div>
 
-      {isLoading && (
-        <p className="text-muted-foreground">Loading contracts...</p>
-      )}
+      {isLoading && <LoadingSkeleton variant="cards" />}
 
       {error && (
-        <p className="text-destructive">
-          Failed to load contracts: {error.message}
-        </p>
+        <ErrorAlert message={error.message} onRetry={() => refetch()} />
       )}
 
       {contracts && contracts.length === 0 && (
-        <div className="text-center py-12 border rounded-lg bg-muted/30">
-          <p className="text-muted-foreground">
-            No contracts yet. Add your first DVC contract to get started.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => setFormOpen(true)}
-          >
-            <PlusIcon className="size-4" />
-            Add Contract
-          </Button>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="No contracts yet"
+          description="Add your first DVC contract to get started."
+          action={{ label: "Add Contract", onClick: () => setFormOpen(true) }}
+        />
       )}
 
       {contracts && contracts.length > 0 && (

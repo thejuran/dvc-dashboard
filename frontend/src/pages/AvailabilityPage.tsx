@@ -1,17 +1,23 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { BarChart3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAvailability } from "../hooks/useAvailability";
 import AvailabilityCard from "../components/AvailabilityCard";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import ErrorAlert from "../components/ErrorAlert";
+import EmptyState from "../components/EmptyState";
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0];
 }
 
 export default function AvailabilityPage() {
+  const navigate = useNavigate();
   const [targetDate, setTargetDate] = useState(todayISO());
-  const { data, isLoading, error } = useAvailability(targetDate || null);
+  const { data, isLoading, error, refetch } = useAvailability(targetDate || null);
 
   return (
     <div>
@@ -35,14 +41,10 @@ export default function AvailabilityPage() {
         />
       </div>
 
-      {isLoading && (
-        <p className="text-muted-foreground">Calculating availability...</p>
-      )}
+      {isLoading && <LoadingSkeleton variant="detail" />}
 
       {error && (
-        <p className="text-destructive">
-          Failed to load availability: {error.message}
-        </p>
+        <ErrorAlert message={error.message} onRetry={() => refetch()} />
       )}
 
       {data && (
@@ -87,12 +89,12 @@ export default function AvailabilityPage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 border rounded-lg bg-muted/30">
-              <p className="text-muted-foreground">
-                No contracts found. Add a contract first to see point
-                availability.
-              </p>
-            </div>
+            <EmptyState
+              icon={BarChart3}
+              title="No contracts found"
+              description="Add a contract first to see point availability."
+              action={{ label: "Go to Contracts", onClick: () => navigate("/contracts") }}
+            />
           )}
         </div>
       )}

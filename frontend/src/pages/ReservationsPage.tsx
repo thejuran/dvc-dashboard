@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -12,6 +12,9 @@ import { useReservations } from "../hooks/useReservations";
 import { useContracts } from "../hooks/useContracts";
 import ReservationCard from "../components/ReservationCard";
 import ReservationFormDialog from "../components/ReservationFormDialog";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import ErrorAlert from "../components/ErrorAlert";
+import EmptyState from "../components/EmptyState";
 import type { Reservation } from "../types";
 
 export default function ReservationsPage() {
@@ -27,7 +30,7 @@ export default function ReservationsPage() {
     upcoming: upcomingOnly || undefined,
   };
 
-  const { data: reservations, isLoading, error } = useReservations(filters);
+  const { data: reservations, isLoading, error, refetch } = useReservations(filters);
   const { data: contracts } = useContracts();
 
   const contractNameMap = new Map(
@@ -82,31 +85,19 @@ export default function ReservationsPage() {
         </Button>
       </div>
 
-      {isLoading && (
-        <p className="text-muted-foreground">Loading reservations...</p>
-      )}
+      {isLoading && <LoadingSkeleton variant="cards" />}
 
       {error && (
-        <p className="text-destructive">
-          Failed to load reservations: {error.message}
-        </p>
+        <ErrorAlert message={error.message} onRetry={() => refetch()} />
       )}
 
       {reservations && reservations.length === 0 && (
-        <div className="text-center py-12 border rounded-lg bg-muted/30">
-          <p className="text-muted-foreground">
-            No reservations yet. Add your first reservation to track your DVC
-            bookings.
-          </p>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => setFormOpen(true)}
-          >
-            <PlusIcon className="size-4" />
-            Add Reservation
-          </Button>
-        </div>
+        <EmptyState
+          icon={CalendarDays}
+          title="No reservations yet"
+          description="Add your first reservation to track your DVC bookings."
+          action={{ label: "Add Reservation", onClick: () => setFormOpen(true) }}
+        />
       )}
 
       {reservations && reservations.length > 0 && (

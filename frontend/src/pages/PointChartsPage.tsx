@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { Table } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -17,6 +18,8 @@ import PointChartTable from "../components/PointChartTable";
 import SeasonCalendar from "../components/SeasonCalendar";
 import StayCostCalculator from "../components/StayCostCalculator";
 import CostHeatmap from "../components/CostHeatmap";
+import LoadingSkeleton from "../components/LoadingSkeleton";
+import EmptyState from "../components/EmptyState";
 
 type TabId = "chart" | "calendar" | "calculator" | "heatmap";
 
@@ -89,7 +92,7 @@ export default function PointChartsPage() {
     return (
       <div>
         <h2 className="text-2xl font-bold tracking-tight mb-4">Point Charts</h2>
-        <p className="text-muted-foreground">Loading available charts...</p>
+        <LoadingSkeleton variant="table" />
       </div>
     );
   }
@@ -98,11 +101,11 @@ export default function PointChartsPage() {
     return (
       <div>
         <h2 className="text-2xl font-bold tracking-tight mb-4">Point Charts</h2>
-        <div className="text-center py-12 border rounded-lg bg-muted/30">
-          <p className="text-muted-foreground">
-            No point charts available. Add chart JSON files to data/point_charts/.
-          </p>
-        </div>
+        <EmptyState
+          icon={Table}
+          title="No point charts available"
+          description="Add chart JSON files to data/point_charts/ directory to browse point costs."
+        />
       </div>
     );
   }
@@ -170,9 +173,7 @@ export default function PointChartsPage() {
       </div>
 
       {/* Tab content */}
-      {chartLoading && (
-        <p className="text-muted-foreground">Loading chart data...</p>
-      )}
+      {chartLoading && <LoadingSkeleton variant="table" />}
 
       {activeTab === "chart" && chart && roomsData && (
         <PointChartTable chart={chart} rooms={roomsData.rooms} />
