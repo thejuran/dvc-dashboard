@@ -13,3 +13,11 @@ frontend/dist
 .planning
 tests
 .DS_Store
+
+# Documentation & CI (not needed in container)
+.github
+docs
+LICENSE
+README.md
+CONTRIBUTING.md
+.ruff_cache
