@@ -5,6 +5,10 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
 
 # Node
 node_modules/
@@ -12,13 +16,26 @@ dist/
 
 # Database
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
 
-# Environment
-.env
-.env.local
+# Environment -- exclude all .env variants except the example template
+.env*
+!.env.example
+
+# Secrets and certificates
+*.pem
+*.key
+*.p12
+*.crt
+
+# Logs
+*.log
 
 # OS
 .DS_Store
+Thumbs.db
 
 # Build artifacts
 frontend/dist/
@@ -32,3 +49,6 @@ backend/db/migrations/versions/*.pyc
 data/db/*.db
 data/db/*.db-wal
 data/db/*.db-shm
+
+# Project management (private)
+.planning/
