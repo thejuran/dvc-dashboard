@@ -5,16 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-02-11)
 
 **Core value:** For any future date, clearly show available points across all contracts and what resorts/rooms those points can actually book.
-**Current focus:** v1.2 Harden & Open Source -- defining requirements
+**Current focus:** Phase 8 - Code Hardening (v1.2)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-11 — Milestone v1.2 started
+Phase: 8 of 10 (Code Hardening)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-02-11 — Roadmap created for v1.2
 
 Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 18 (across v1.0 + v1.1)
+- Average duration: carried from prior milestones
+- Total execution time: carried from prior milestones
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 8. Code Hardening | 0/TBD | - | - |
+| 9. UX & Security Polish | 0/TBD | - | - |
+| 10. Open Source & Docs | 0/TBD | - | - |
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
@@ -27,9 +44,8 @@ Key architectural decisions carrying forward:
 - Monorepo: FastAPI backend + React/Vite frontend
 - SQLite for storage (single-user)
 - Pure-function engine layer (no DB coupling)
-- Point charts as versioned JSON data
-- Docker single-container: FastAPI serves React build via StaticFiles
-- Zustand for ephemeral client-side state
+- Docker single-container: FastAPI serves React build
+- GPL v3 license for open-source release (pending)
 
 ### Pending Todos
 
@@ -42,6 +58,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Defining v1.2 requirements
+Stopped at: Roadmap created for v1.2 milestone
 Resume file: None
-Next: Complete requirements and roadmap definition
+Next: /gsd:plan-phase 8
