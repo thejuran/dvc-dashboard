@@ -30,11 +30,14 @@
   3. A React component throwing an error does not crash the entire app -- the error boundary catches it and shows a recovery message
   4. Tests pass for edge cases: 0 contracts, 0 points, expired use years, boundary dates, and key user flows (create contract, make reservation, check availability)
   5. No lint warnings or dead code remain in either frontend or backend
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
+- [ ] 08-01-PLAN.md -- Backend structured error infrastructure + frontend API layer update
+- [ ] 08-02-PLAN.md -- Backend input validation hardening across all endpoints
+- [ ] 08-03-PLAN.md -- Frontend error boundaries + form validation with inline errors
+- [ ] 08-04-PLAN.md -- Test coverage expansion: edge cases + integration tests
+- [ ] 08-05-PLAN.md -- Lint cleanup + dead code removal (ruff + eslint)
 
 #### Phase 9: UX & Security Polish
 **Goal**: The app feels polished on any device and contains no security liabilities that would embarrass an open-source release
@@ -72,7 +75,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 8. Code Hardening | v1.2 | 0/TBD | Not started | - |
+| 8. Code Hardening | v1.2 | 0/5 | Planned | - |
 | 9. UX & Security Polish | v1.2 | 0/TBD | Not started | - |
 | 10. Open Source & Documentation | v1.2 | 0/TBD | Not started | - |
 
