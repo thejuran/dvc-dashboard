@@ -52,6 +52,9 @@ Key architectural decisions carrying forward:
 - Ruff lint config in pyproject.toml (E, W, F, I, UP, B, SIM, RUF rules; B008 ignored for FastAPI)
 - ESLint: set-state-in-effect disabled globally, react-refresh off for shadcn ui/ files
 - StrEnum for all Python enums (Python 3.12+), explicit re-exports in models __init__.py
+- _strip_str whitespace sanitization on all user-facing string fields in Pydantic schemas
+- Numeric caps: points le=4000, string limits (name 100, notes 500, confirmation 50)
+- Indexed field names in scenario validation: hypothetical_bookings[N].field
 
 ### Pending Todos
 
@@ -64,6 +67,6 @@ None open.
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Completed 08-05-PLAN.md (Lint & Dead Code Cleanup) -- Phase 8 complete
+Stopped at: Completed 08-02-PLAN.md (Input Validation Hardening) -- retroactive SUMMARY created
 Resume file: None
 Next: Phase 9 (UX & Security Polish) or /gsd:new-milestone
